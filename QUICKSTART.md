@@ -57,7 +57,7 @@ Do you want to reset and initialize the competition? (y/N):
 **Press `y`** if you want to:
 - Delete all existing competition data
 - Create a fresh competition
-- Register 5 LLM participants (Claude, GPT-4o, GPT-4o mini, DeepSeek, Qwen)
+- Register 4 LLM participants (Claude, GPT-4o, GPT-4o mini, DeepSeek Reasoner)
 - Give each participant $10,000 starting capital
 
 **Press `n`** if you want to keep existing data.
@@ -92,9 +92,9 @@ cp backend/.env.example backend/.env
 
 Edit `backend/.env` and add your API keys:
 - `ANTHROPIC_API_KEY` - Get from https://console.anthropic.com/
-- `AZURE_OPENAI_API_KEY` - Get from Azure portal
+- `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` - Get from Azure portal (portal.azure.com)
+  - Make sure you have deployments named "gpt-4o" and "gpt-4o-mini"
 - `DEEPSEEK_API_KEY` - Get from https://platform.deepseek.com/
-- `QWEN_API_KEY` - Get from https://dashscope.console.aliyun.com/
 
 ### 3. Apply Database Migrations
 

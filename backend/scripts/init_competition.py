@@ -64,35 +64,28 @@ PARTICIPANTS_CONFIG = [
     },
     {
         "name": "gpt4o",
-        "llm_provider": "openai",
+        "llm_provider": "azure_openai",
         "llm_model": "gpt-4o",
         "llm_config": {
+            "model": "gpt-4o",  # Azure deployment name
             "temperature": 0.7,
             "max_tokens": 2000,
         }
     },
     {
         "name": "gpt4o-mini",
-        "llm_provider": "openai",
+        "llm_provider": "azure_openai",
         "llm_model": "gpt-4o-mini",
         "llm_config": {
+            "model": "gpt-4o-mini",  # Azure deployment name
             "temperature": 0.7,
             "max_tokens": 2000,
         }
     },
     {
-        "name": "deepseek-chat",
+        "name": "deepseek-reasoner",
         "llm_provider": "deepseek",
-        "llm_model": "deepseek-chat",
-        "llm_config": {
-            "temperature": 0.7,
-            "max_tokens": 2000,
-        }
-    },
-    {
-        "name": "qwen-max",
-        "llm_provider": "qwen",
-        "llm_model": "qwen-max",
+        "llm_model": "deepseek-reasoner",
         "llm_config": {
             "temperature": 0.7,
             "max_tokens": 2000,
