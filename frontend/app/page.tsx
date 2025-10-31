@@ -2,6 +2,7 @@ import { EquityChart } from "@/components/dashboard/EquityChart";
 import { CompetitionStats } from "@/components/dashboard/CompetitionStats";
 import { Positions } from "@/components/dashboard/Positions";
 import { Trades } from "@/components/dashboard/Trades";
+import { InvocationLogs } from "@/components/dashboard/InvocationLogs";
 
 export default function DashboardPage() {
   return (
@@ -35,6 +36,15 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4">Recent Trades</h2>
           <Trades />
         </div>
+      </div>
+
+      {/* LLM Invocation Logs */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
+        <h2 className="text-xl font-semibold mb-4">LLM Invocation Logs</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          View the exact prompts sent to the LLM and their responses
+        </p>
+        <InvocationLogs />
       </div>
     </div>
   );
