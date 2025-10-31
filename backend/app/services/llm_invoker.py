@@ -1,5 +1,6 @@
 """LLM Invoker service"""
 import json
+import re
 import time
 from datetime import datetime
 from decimal import Decimal
@@ -139,20 +140,50 @@ class LLMInvoker:
         return invocation
 
     def _parse_llm_response(self, response_text: str) -> LLMResponse:
-        """Parse and validate LLM response JSON"""
-        # Extract JSON from response (may have markdown code blocks)
+        """Parse and validate LLM response JSON with robust extraction"""
         response_text = response_text.strip()
 
-        # Remove markdown code blocks if present
-        if response_text.startswith("```"):
-            lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])
+        # Strategy 1: Extract JSON from markdown code blocks (```json or ```)
+        if "```" in response_text:
+            # Find all code blocks
+            # Match ```json or ``` followed by content and closing ```
+            code_block_pattern = r'```(?:json)?\s*\n(.*?)\n```'
+            matches = re.findall(code_block_pattern, response_text, re.DOTALL)
 
-        # Parse JSON
-        data = json.loads(response_text)
+            if matches:
+                # Try each code block until we find valid JSON
+                for block in matches:
+                    try:
+                        data = json.loads(block.strip())
+                        return LLMResponse(**data)
+                    except (json.JSONDecodeError, ValueError):
+                        continue
 
-        # Validate with Pydantic
-        return LLMResponse(**data)
+        # Strategy 2: Try to find JSON object boundaries { ... }
+        # Look for the first { and last } to extract JSON
+        first_brace = response_text.find('{')
+        last_brace = response_text.rfind('}')
+
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            try:
+                json_str = response_text[first_brace:last_brace + 1]
+                data = json.loads(json_str)
+                return LLMResponse(**data)
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+        # Strategy 3: Try parsing the whole response as-is (in case it's clean JSON)
+        try:
+            data = json.loads(response_text)
+            return LLMResponse(**data)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+        # If all strategies fail, raise an error with helpful message
+        raise ValueError(
+            f"Could not extract valid JSON from response. "
+            f"Response preview: {response_text[:200]}..."
+        )
 
     def _process_orders(
         self,
