@@ -1,0 +1,50 @@
+# Core Framework
+fastapi==0.120.3
+uvicorn[standard]==0.38.0
+pydantic==2.12.3
+pydantic-settings==2.11.0
+
+# Database
+sqlalchemy==2.0.44
+alembic==1.17.1
+psycopg2-binary==2.9.11
+asyncpg==0.30.0
+
+# Redis
+redis==7.0.1
+hiredis==3.3.0
+
+# Market Data
+ccxt==4.5.14
+yfinance==0.2.66
+requests==2.32.5
+
+# LLM Clients
+anthropic==0.72.0
+openai==2.6.1
+httpx==0.28.1
+
+# Data Processing
+pandas==2.3.3
+numpy==2.2.6
+
+# Technical Indicators
+# ta-lib==0.4.28  # Requires system-level TA-Lib library, install separately if needed
+pandas-ta==0.4.71b0
+
+# Scheduler
+apscheduler==3.11.0
+
+# Utilities
+python-dotenv==1.2.1
+python-multipart==0.0.20
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+
+# Testing
+pytest==8.4.2
+pytest-asyncio==1.2.0
+pytest-cov==7.0.0
+
+# Monitoring
+prometheus-client==0.23.1
