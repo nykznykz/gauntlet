@@ -109,3 +109,36 @@ export interface LeaderboardEntry {
   win_rate: number;
   status: string;
 }
+
+export interface LLMInvocation {
+  id: string;
+  participant_id: string;
+  competition_id: string;
+
+  // Request
+  prompt_text: string;
+  prompt_tokens: number | null;
+  market_data_snapshot: Record<string, any> | null;
+  portfolio_snapshot: Record<string, any> | null;
+
+  // Response
+  response_text: string | null;
+  response_tokens: number | null;
+  parsed_decision: Record<string, any> | null;
+
+  // Metadata
+  invocation_time: string;
+  response_time_ms: number | null;
+  status: "success" | "timeout" | "error" | "invalid_response";
+  error_message: string | null;
+
+  // Cost Tracking
+  estimated_cost: number | null;
+}
+
+export interface LLMInvocationList {
+  invocations: LLMInvocation[];
+  total: number;
+  limit: number;
+  offset: number;
+}

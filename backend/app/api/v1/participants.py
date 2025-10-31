@@ -10,11 +10,13 @@ from app.models.portfolio import Portfolio
 from app.models.position import Position
 from app.models.trade import Trade
 from app.models.portfolio_history import PortfolioHistory
+from app.models.llm_invocation import LLMInvocation
 from app.schemas.participant import ParticipantCreate, ParticipantResponse, ParticipantPerformance
 from app.schemas.portfolio import PortfolioResponse
 from app.schemas.position import PositionList, PositionResponse
 from app.schemas.trade import TradeList, TradeResponse
 from app.schemas.portfolio_history import PortfolioHistoryResponse, PortfolioHistoryPoint
+from app.schemas.llm_invocation import LLMInvocationResponse, LLMInvocationList
 from app.services.portfolio_manager import PortfolioManager
 from app.utils.calculations import calculate_win_rate
 
@@ -197,3 +199,38 @@ def list_competition_participants(
     )
 
     return participants
+
+
+@router.get("/{participant_id}/invocations", response_model=LLMInvocationList)
+def get_participant_invocations(
+    participant_id: UUID,
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None,
+    db: Session = Depends(get_db_session)
+):
+    """Get participant's LLM invocation logs with optional status filtering"""
+    # Verify participant exists
+    participant = db.query(Participant).filter(Participant.id == participant_id).first()
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found")
+
+    # Build query
+    query = db.query(LLMInvocation).filter(LLMInvocation.participant_id == participant_id)
+
+    # Apply status filter if provided
+    if status:
+        query = query.filter(LLMInvocation.status == status)
+
+    # Order by most recent first
+    query = query.order_by(LLMInvocation.invocation_time.desc())
+
+    total = query.count()
+    invocations = query.offset(offset).limit(limit).all()
+
+    return {
+        "invocations": invocations,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
