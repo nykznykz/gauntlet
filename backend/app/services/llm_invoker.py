@@ -151,6 +151,22 @@ class LLMInvoker:
         """Parse and validate LLM response JSON with robust extraction"""
         response_text = response_text.strip()
 
+        # Strategy 0: Extract from [Response] section (for DeepSeek Reasoner format)
+        if "[Response]" in response_text:
+            response_section_match = re.search(r'\[Response\]\s*(.*?)(?:\n\[|$)', response_text, re.DOTALL)
+            if response_section_match:
+                response_section = response_section_match.group(1).strip()
+                # Try to extract JSON from this section
+                first_brace = response_section.find('{')
+                last_brace = response_section.rfind('}')
+                if first_brace != -1 and last_brace != -1:
+                    try:
+                        json_str = response_section[first_brace:last_brace + 1]
+                        data = json.loads(json_str)
+                        return LLMResponse(**data)
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+
         # Strategy 1: Extract JSON from markdown code blocks (```json or ```)
         if "```" in response_text:
             # Find all code blocks
