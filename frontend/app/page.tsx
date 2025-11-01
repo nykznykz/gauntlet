@@ -1,3 +1,5 @@
+'use client';
+
 import { EquityChart } from "@/components/dashboard/EquityChart";
 import { CompetitionStats } from "@/components/dashboard/CompetitionStats";
 import { Positions } from "@/components/dashboard/Positions";
