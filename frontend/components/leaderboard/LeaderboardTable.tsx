@@ -10,18 +10,16 @@ export function LeaderboardTable() {
   const selectedCompetitionId = useAppStore((state) => state.selectedCompetitionId);
 
   // Fetch leaderboard data
-  const { data, isLoading: loading, error } = useQuery({
+  const { data: entries, isLoading: loading, error } = useQuery({
     queryKey: ['leaderboard', selectedCompetitionId],
     queryFn: async () => {
       if (!selectedCompetitionId) return null;
       const response = await leaderboardApi.get(selectedCompetitionId);
-      return response.data as { leaderboard: LeaderboardEntry[] };
+      return response.data;
     },
     enabled: !!selectedCompetitionId,
     refetchInterval: 10000,
   });
-
-  const entries = data?.leaderboard || [];
 
   if (loading) {
     return <div className="text-center py-8 text-gray-500">Loading leaderboard...</div>;
@@ -31,7 +29,7 @@ export function LeaderboardTable() {
     return <div className="text-center py-8 text-red-500">Error loading leaderboard</div>;
   }
 
-  if (entries.length === 0) {
+  if (!entries || entries.length === 0) {
     return <div className="text-center py-8 text-gray-500">No participants yet</div>;
   }
 

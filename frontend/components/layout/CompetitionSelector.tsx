@@ -65,19 +65,19 @@ export function CompetitionSelector() {
 
   // Fetch participants when competition changes
   useEffect(() => {
-    if (selectedCompetition) {
-      async function fetchParticipants() {
-        const response = await participantApi.list(selectedCompetition);
-        if (response.data && Array.isArray(response.data)) {
-          setParticipants(response.data);
-          if (response.data.length > 0) {
-            setSelectedParticipant(response.data[0].id);
-          }
+    if (!selectedCompetition) return;
+
+    async function fetchParticipants(competitionId: string) {
+      const response = await participantApi.list(competitionId);
+      if (response.data && Array.isArray(response.data)) {
+        setParticipants(response.data);
+        if (response.data.length > 0) {
+          setSelectedParticipant(response.data[0].id);
         }
       }
-      fetchParticipants();
     }
-  }, [selectedCompetition]);
+    fetchParticipants(selectedCompetition);
+  }, [selectedCompetition, setSelectedParticipant]);
 
   const currentCompetition = competitions.find(c => c.id === selectedCompetition);
   const currentParticipant = participants.find(p => p.id === selectedParticipant);
@@ -97,7 +97,7 @@ export function CompetitionSelector() {
             </label>
             <div className="relative">
               <select
-                value={selectedCompetition}
+                value={selectedCompetition || ''}
                 onChange={(e) => setSelectedCompetition(e.target.value)}
                 className="appearance-none bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md px-3 py-1.5 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -131,7 +131,7 @@ export function CompetitionSelector() {
               </label>
               <div className="relative">
                 <select
-                  value={selectedParticipant}
+                  value={selectedParticipant || ''}
                   onChange={(e) => setSelectedParticipant(e.target.value)}
                   className="appearance-none bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md px-3 py-1.5 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >

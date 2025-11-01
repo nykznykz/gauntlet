@@ -10,12 +10,12 @@ export function Positions() {
   const selectedParticipantId = useAppStore((state) => state.selectedParticipantId);
 
   // Fetch positions data
-  const { data, isLoading, error } = useQuery({
+  const { data: positions, isLoading, error } = useQuery({
     queryKey: ['positions', selectedParticipantId],
     queryFn: async () => {
       if (!selectedParticipantId) return null;
       const response = await positionApi.list(selectedParticipantId);
-      return response.data as { positions: Position[] };
+      return response.data;
     },
     enabled: !!selectedParticipantId,
     refetchInterval: 5000,
@@ -37,7 +37,7 @@ export function Positions() {
     );
   }
 
-  if (!data || !data.positions || data.positions.length === 0) {
+  if (!positions || positions.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-gray-500">No open positions</div>
@@ -60,7 +60,7 @@ export function Positions() {
           </tr>
         </thead>
         <tbody>
-          {data.positions.map((position) => {
+          {positions.map((position) => {
             const pnl = position.unrealized_pnl;
             const pnlColor = pnl >= 0 ? 'text-green-600' : 'text-red-600';
             const sideColor = position.side === 'long' ? 'text-green-600' : 'text-red-600';

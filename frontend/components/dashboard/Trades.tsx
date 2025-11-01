@@ -11,12 +11,12 @@ export function Trades() {
   const selectedParticipantId = useAppStore((state) => state.selectedParticipantId);
 
   // Fetch trades data
-  const { data, isLoading, error } = useQuery({
+  const { data: trades, isLoading, error } = useQuery({
     queryKey: ['trades', selectedParticipantId],
     queryFn: async () => {
       if (!selectedParticipantId) return null;
       const response = await tradeApi.list(selectedParticipantId, 20);
-      return response.data as { trades: Trade[] };
+      return response.data;
     },
     enabled: !!selectedParticipantId,
     refetchInterval: 5000,
@@ -38,7 +38,7 @@ export function Trades() {
     );
   }
 
-  if (!data || !data.trades || data.trades.length === 0) {
+  if (!trades || trades.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-gray-500">No trades yet</div>
@@ -68,7 +68,7 @@ export function Trades() {
           </tr>
         </thead>
         <tbody>
-          {data.trades.map((trade) => {
+          {trades.map((trade) => {
             const pnl = trade.pnl || 0;
             const pnlColor = pnl >= 0 ? 'text-green-600' : 'text-red-600';
             const sideColor = trade.side === 'long' ? 'text-green-600' : 'text-red-600';
