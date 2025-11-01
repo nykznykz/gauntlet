@@ -1,3 +1,5 @@
+import { Competition, Participant, Portfolio, Position, Trade, MultiParticipantHistory, LeaderboardEntry, LLMInvocationList } from '@/types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface ApiResponse<T> {
@@ -66,51 +68,51 @@ export const apiClient = new ApiClient(API_BASE_URL);
 
 // Competition APIs
 export const competitionApi = {
-  list: () => apiClient.get('/api/v1/competitions'),
-  get: (id: string) => apiClient.get(`/api/v1/competitions/${id}`),
-  create: (data: any) => apiClient.post('/api/v1/competitions', data),
-  history: (id: string) => apiClient.get(`/api/v1/competitions/${id}/history`),
+  list: () => apiClient.get<{ competitions: Competition[] }>('/api/v1/competitions'),
+  get: (id: string) => apiClient.get<Competition>(`/api/v1/competitions/${id}`),
+  create: (data: any) => apiClient.post<Competition>('/api/v1/competitions', data),
+  history: (id: string) => apiClient.get<MultiParticipantHistory>(`/api/v1/competitions/${id}/history`),
 };
 
 // Participant APIs
 export const participantApi = {
   list: (competitionId: string) =>
-    apiClient.get(`/api/v1/participants/competitions/${competitionId}/all`),
-  get: (id: string) => apiClient.get(`/api/v1/participants/${id}`),
-  performance: (id: string) => apiClient.get(`/api/v1/participants/${id}/performance`),
+    apiClient.get<Participant[]>(`/api/v1/participants/competitions/${competitionId}/all`),
+  get: (id: string) => apiClient.get<Participant>(`/api/v1/participants/${id}`),
+  performance: (id: string) => apiClient.get<any>(`/api/v1/participants/${id}/performance`),
 };
 
 // Portfolio APIs
 export const portfolioApi = {
   get: (participantId: string) =>
-    apiClient.get(`/api/v1/participants/${participantId}/portfolio`),
+    apiClient.get<Portfolio>(`/api/v1/participants/${participantId}/portfolio`),
   history: (participantId: string, limit?: number) =>
-    apiClient.get(`/api/v1/participants/${participantId}/history?limit=${limit || 500}`),
+    apiClient.get<any>(`/api/v1/participants/${participantId}/history?limit=${limit || 500}`),
 };
 
 // Position APIs
 export const positionApi = {
   list: (participantId: string) =>
-    apiClient.get(`/api/v1/participants/${participantId}/positions`),
+    apiClient.get<Position[]>(`/api/v1/participants/${participantId}/positions`),
 };
 
 // Trade APIs
 export const tradeApi = {
   list: (participantId: string, limit?: number) =>
-    apiClient.get(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
+    apiClient.get<Trade[]>(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
 };
 
 // Market Data APIs
 export const marketDataApi = {
-  latest: (symbol: string) => apiClient.get(`/api/market-data/${symbol}/latest`),
+  latest: (symbol: string) => apiClient.get<any>(`/api/market-data/${symbol}/latest`),
   history: (symbol: string, params?: { start?: string; end?: string; interval?: string }) =>
-    apiClient.get(`/api/market-data/${symbol}/history?${new URLSearchParams(params as any)}`),
+    apiClient.get<any>(`/api/market-data/${symbol}/history?${new URLSearchParams(params as any)}`),
 };
 
 // Leaderboard API
 export const leaderboardApi = {
   get: (competitionId: string) =>
-    apiClient.get(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
+    apiClient.get<LeaderboardEntry[]>(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
 };
 
 // Invocation APIs
@@ -121,6 +123,6 @@ export const invocationApi = {
     if (options?.offset) params.append('offset', options.offset.toString());
     if (options?.status) params.append('status', options.status);
     const query = params.toString();
-    return apiClient.get(`/api/v1/participants/${participantId}/invocations${query ? '?' + query : ''}`);
+    return apiClient.get<LLMInvocationList>(`/api/v1/participants/${participantId}/invocations${query ? '?' + query : ''}`);
   },
 };
