@@ -1,5 +1,6 @@
 """LLM Invoker service"""
 import json
+import logging
 import re
 import time
 from datetime import datetime
@@ -7,6 +8,8 @@ from decimal import Decimal
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 from app.models.participant import Participant
 from app.models.competition import Competition
 from app.models.portfolio import Portfolio
