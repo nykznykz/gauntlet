@@ -123,11 +123,34 @@ Authentication via `X-API-Key` header (see `api/dependencies.py`).
 3. Add provider to `llm_provider` enum in schemas
 4. Add necessary API keys/config to `config.py`
 
+### CFD Margin Accounting Model
+
+The system uses a **Reserve Margin** accounting model (similar to most retail CFD brokers):
+
+- **Opening a Position**: Cash balance remains unchanged, margin is "reserved" from available funds
+  - `cash_balance` stays the same
+  - `margin_used` increases by the required margin amount
+  - `equity` = cash + unrealized P&L (remains the same initially since unrealized P&L = 0)
+  - `margin_available` = equity - margin_used (decreases)
+
+- **Holding a Position**: Equity changes only based on price movements
+  - `cash_balance` stays the same
+  - `unrealized_pnl` updates based on current market price
+  - `equity` = cash + unrealized P&L (fluctuates with market)
+
+- **Closing a Position**: Realized P&L is added to cash, margin is released
+  - `cash_balance` increases/decreases by realized P&L
+  - `margin_used` decreases by the released margin amount
+  - `realized_pnl` increases by the P&L from the closed position
+  - `equity` = cash + unrealized P&L (may change if there's P&L)
+
+This model ensures that equity charts reflect actual trading performance (P&L) rather than just margin movements.
+
 ### CFD Position Lifecycle
 
-1. **Open**: Calculate entry price, required margin = (notional_value / leverage) * margin_requirement_pct
+1. **Open**: Calculate entry price, required margin = (notional_value / leverage)
 2. **Hold**: Track unrealized P&L = direction * quantity * (current_price - entry_price)
-3. **Close**: Realize P&L, release margin back to cash
+3. **Close**: Realize P&L, release margin (add realized P&L to cash)
 4. **Liquidation**: Auto-close if equity falls below maintenance margin threshold
 
 ### Scheduler Tasks

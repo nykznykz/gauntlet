@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # DeepSeek Configuration
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
-    DEEPSEEK_MODEL: str = "deepseek-reasoner"
+    DEEPSEEK_MODEL: str = "deepseek-chat"
 
     # Qwen Configuration
     QWEN_API_KEY: str = ""

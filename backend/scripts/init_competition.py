@@ -47,7 +47,7 @@ COMPETITION_CONFIG = {
     "allowed_asset_classes": ["crypto"],  # Focus on crypto for now
     "max_position_size_pct": Decimal("50.0"),  # Max 50% of equity per position
     "max_participants": 20,
-    "invocation_interval_minutes": 60,  # Invoke LLMs every hour
+    "invocation_interval_minutes": 5,  # Invoke LLMs every 5 minutes
     "market_hours_only": False,  # Trade 24/7 for crypto
     "duration_days": 7,  # 7-day competition
 }
@@ -83,12 +83,12 @@ PARTICIPANTS_CONFIG = [
         }
     },
     {
-        "name": "deepseek-reasoner",
+        "name": "deepseek-chat",
         "llm_provider": "deepseek",
-        "llm_model": "deepseek-reasoner",
+        "llm_model": "deepseek-chat",
         "llm_config": {
             "temperature": 0.7,
-            "max_tokens": 8000,  # Reasoner model needs more tokens for internal reasoning + JSON output
+            "max_tokens": 4096,
         }
     },
 ]

@@ -213,6 +213,73 @@ Orchestrates LLM invocations by building prompts with market data and portfolio 
 ### Market Data Service
 Fetches real-time prices and market data from Binance (crypto) with Redis caching.
 
+## CFD Margin Accounting Model
+
+Gauntlet uses a **Reserve Margin** accounting model, which mirrors how most retail CFD brokers handle margin:
+
+### Opening a Position
+When a trader opens a position:
+- **Cash balance remains unchanged** - money stays in the account
+- **Margin is "reserved"** - the required margin amount is tracked as `margin_used`
+- **Equity stays the same** initially (since unrealized P&L = 0 at entry)
+- **Available margin decreases** (equity - margin_used)
+
+Example:
+```
+Initial: Cash = $10,000, Equity = $10,000
+Open position requiring $1,000 margin:
+  Cash = $10,000 (unchanged)
+  Margin Used = $1,000
+  Unrealized P&L = $0
+  Equity = $10,000 (unchanged!)
+  Available Margin = $9,000
+```
+
+### Holding a Position
+While a position is open:
+- **Cash balance remains unchanged**
+- **Unrealized P&L updates** based on current market price
+- **Equity fluctuates** = cash + unrealized P&L
+- Position P&L: `direction * quantity * (current_price - entry_price)`
+
+Example:
+```
+Position moves +$500 in profit:
+  Cash = $10,000 (unchanged)
+  Margin Used = $1,000
+  Unrealized P&L = +$500
+  Equity = $10,500 (increased by P&L!)
+  Available Margin = $9,500
+```
+
+### Closing a Position
+When a position is closed:
+- **Realized P&L is added to cash** balance
+- **Margin is released** (margin_used decreases)
+- **Unrealized P&L becomes 0** for that position
+- **Equity reflects only remaining unrealized P&L** from other open positions
+
+Example:
+```
+Close position with +$500 profit:
+  Cash = $10,500 (increased by realized P&L)
+  Margin Used = $0
+  Unrealized P&L = $0
+  Realized P&L = +$500
+  Equity = $10,500
+  Available Margin = $10,500
+```
+
+### Why This Model?
+
+This accounting model ensures that:
+1. **Equity charts reflect trading performance**, not just margin movements
+2. Opening a position doesn't artificially drop equity
+3. Equity changes only when prices move (generating P&L)
+4. Behavior matches trader expectations from retail brokers
+
+The alternative "Deduct Margin" model would subtract margin from cash when opening positions, causing equity to drop even without losses - confusing and unintuitive for equity charts.
+
 ## Configuration
 
 Key environment variables in `.env`:
