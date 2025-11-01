@@ -56,7 +56,11 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ]
+    CORS_ORIGIN_REGEX: str = r"https://.*\.railway\.app"
 
     class Config:
         env_file = ".env"
