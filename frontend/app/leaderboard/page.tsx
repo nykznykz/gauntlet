@@ -1,3 +1,5 @@
+'use client';
+
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { PerformanceCharts } from "@/components/leaderboard/PerformanceCharts";
 
