@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python310", "postgresql"]
+nixPkgs = ["python312", "postgresql"]
 
 [phases.install]
 cmds = ["pip install --upgrade pip", "pip install --no-cache-dir -r requirements.txt"]
