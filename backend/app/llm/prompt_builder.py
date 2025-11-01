@@ -115,13 +115,40 @@ You may:
 - Close existing positions (action: "close", include position_id)
 - Do nothing (decision: "hold")
 
-IMPORTANT - POSITION SIZING:
-- The "max_position_size_dollars" in trading_rules is the MAXIMUM notional value per position
-- Calculate quantity carefully: quantity = max_position_size_dollars / current_price
-- For BTC at $109,000: max quantity ≈ max_position_size_dollars / 109,000
-- For ETH at $3,900: max quantity ≈ max_position_size_dollars / 3,900
-- Adjust quantity lower if using higher leverage to account for margin requirements
-- Orders exceeding max_position_size_dollars will be REJECTED
+CRITICAL - POSITION SIZING RULES:
+The system validates that (quantity × current_price) ≤ max_position_size_dollars
+
+1. NOTIONAL VALUE LIMIT (enforced by system):
+   - max_position_size_dollars is the maximum NOTIONAL VALUE per position
+   - Notional value = quantity × current_price
+   - This limit applies REGARDLESS of leverage
+   - Example: If max is $5000 and BTC is $100,000, max quantity = 5000/100000 = 0.05 BTC
+
+2. LEVERAGE DOES NOT AFFECT POSITION SIZE LIMITS:
+   - Leverage only affects margin required: margin = notional_value / leverage
+   - Higher leverage = lower margin required, but same notional value limit
+   - Example: $5000 notional with 2x leverage requires $2500 margin
+   - Example: $5000 notional with 1x leverage requires $5000 margin
+
+3. CALCULATION FORMULA (use this):
+   - max_quantity = max_position_size_dollars / current_price
+   - Always calculate: notional_value = quantity × current_price
+   - Verify: notional_value ≤ max_position_size_dollars
+   - Add safety buffer: use 98% of max to account for price slippage
+
+4. WORKED EXAMPLE:
+   - Given: max_position_size_dollars = $5000, BTC price = $100,000
+   - Max quantity = 5000 / 100000 = 0.05 BTC
+   - Safe quantity (98%) = 0.05 × 0.98 = 0.049 BTC
+   - Notional value check: 0.049 × 100000 = $4900 ✓ (under $5000 limit)
+   - At 2x leverage: margin required = 4900 / 2 = $2450
+   - At 3x leverage: margin required = 4900 / 3 = $1633
+
+COMMON MISTAKES TO AVOID:
+❌ DO NOT: Calculate quantity as (max_position_size × leverage) / price
+✓ DO: Calculate quantity as max_position_size / price
+❌ DO NOT: Assume leverage increases position size limit
+✓ DO: Understand leverage only reduces margin requirement
 
 Respond with valid JSON following this format:
 {
@@ -132,23 +159,23 @@ Respond with valid JSON following this format:
       "action": "open" or "close",
       "symbol": "BTCUSDT",
       "side": "buy" or "sell",
-      "quantity": 0.018,
+      "quantity": 0.049,
       "leverage": 2.0,
       "position_id": "uuid" // Only for close action
     }
   ]
 }
 
-Example - Opening a position (assuming max_position_size_dollars = $2000, BTC price = $110,000):
+Example - Opening position (max_position_size_dollars = $5000, BTC = $100,000):
 {
   "decision": "trade",
-  "reasoning": "BTC broke above resistance with strong volume. Opening small long position.",
+  "reasoning": "BTC momentum strong. Opening conservative long position within limits.",
   "orders": [
     {
       "action": "open",
       "symbol": "BTCUSDT",
       "side": "buy",
-      "quantity": 0.018,
+      "quantity": 0.049,
       "leverage": 2.0
     }
   ]

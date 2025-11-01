@@ -7,8 +7,8 @@ class LLMOrderDecision(BaseModel):
     """Schema for LLM order decision"""
     action: Literal["open", "close", "increase", "decrease"]
     symbol: str
-    side: Literal["buy", "sell"]
-    quantity: float
+    side: Literal["buy", "sell"] | None = None  # Optional for close actions
+    quantity: float | None = None  # Optional for close actions
     leverage: float = 1.0
     position_id: str | None = None
 

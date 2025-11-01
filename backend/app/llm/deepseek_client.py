@@ -46,7 +46,21 @@ class DeepSeekClient(BaseLLMClient):
                 temperature=temperature,
             )
 
-            response_text = response.choices[0].message.content
+            message = response.choices[0].message
+
+            # DeepSeek Reasoner has both content and reasoning_content fields
+            response_text = message.content or ""
+
+            # If there's reasoning_content, combine it with the response
+            # This helps with debugging and provides full context
+            if hasattr(message, 'reasoning_content') and message.reasoning_content:
+                if response_text:
+                    # Both exist: combine them
+                    response_text = f"[Reasoning]\n{message.reasoning_content}\n\n[Response]\n{response_text}"
+                else:
+                    # Only reasoning exists: use it as response
+                    response_text = message.reasoning_content
+
             prompt_tokens = response.usage.prompt_tokens
             response_tokens = response.usage.completion_tokens
 

@@ -146,6 +146,20 @@ export function InvocationLogs() {
                   Tokens: {invocation.prompt_tokens} / {invocation.response_tokens}
                 </div>
               )}
+              {invocation.execution_results && invocation.execution_results.length > 0 && (
+                <div className="flex gap-1 text-xs">
+                  {invocation.execution_results.filter(r => r.validation_passed).length > 0 && (
+                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                      ✓ {invocation.execution_results.filter(r => r.validation_passed).length}
+                    </span>
+                  )}
+                  {invocation.execution_results.filter(r => !r.validation_passed).length > 0 && (
+                    <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
+                      ✗ {invocation.execution_results.filter(r => !r.validation_passed).length}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="ml-auto">
                 {expandedId === invocation.id ? (
                   <ChevronUp className="w-4 h-4" />
@@ -189,6 +203,60 @@ export function InvocationLogs() {
                     <pre className="bg-white dark:bg-zinc-800 p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-gray-200 dark:border-zinc-700">
                       {JSON.stringify(invocation.parsed_decision, null, 2)}
                     </pre>
+                  </div>
+                )}
+
+                {/* Execution Results */}
+                {invocation.execution_results && invocation.execution_results.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                      Order Execution Results:
+                    </h4>
+                    <div className="space-y-2">
+                      {invocation.execution_results.map((result, idx) => (
+                        <div
+                          key={result.order_id}
+                          className={`p-3 rounded-md border ${
+                            result.validation_passed
+                              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            {result.validation_passed ? (
+                              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                Order #{idx + 1}: {result.action.toUpperCase()} {result.symbol}
+                              </div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-0.5">
+                                <div>Side: {result.side || 'N/A'} | Quantity: {result.quantity?.toFixed(8) || 'N/A'} | Leverage: {result.leverage}x</div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-medium ${
+                                    result.validation_passed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+                                  }`}>
+                                    Status: {result.status.toUpperCase()}
+                                  </span>
+                                  {result.executed_price && (
+                                    <span className="text-gray-500">
+                                      | Executed @ ${result.executed_price.toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                                {result.rejection_reason && (
+                                  <div className="mt-1 p-2 bg-red-100 dark:bg-red-900/30 rounded text-red-700 dark:text-red-300">
+                                    <strong>Rejected:</strong> {result.rejection_reason}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

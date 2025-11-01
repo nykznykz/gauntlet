@@ -25,6 +25,7 @@ class LLMInvocation(Base):
     response_text = Column(Text)
     response_tokens = Column(Integer)
     parsed_decision = Column(JSONB)
+    execution_results = Column(JSONB)  # Array of order execution results with validation/rejection details
 
     # Metadata
     invocation_time = Column(TIMESTAMP(timezone=True), server_default=func.now())

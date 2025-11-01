@@ -110,6 +110,19 @@ export interface LeaderboardEntry {
   status: string;
 }
 
+export interface ExecutionResult {
+  order_id: string;
+  action: string;
+  symbol: string;
+  side: string | null;
+  quantity: number | null;
+  leverage: number;
+  validation_passed: boolean;
+  rejection_reason: string | null;
+  status: string;
+  executed_price: number | null;
+}
+
 export interface LLMInvocation {
   id: string;
   participant_id: string;
@@ -125,6 +138,7 @@ export interface LLMInvocation {
   response_text: string | null;
   response_tokens: number | null;
   parsed_decision: Record<string, any> | null;
+  execution_results: ExecutionResult[] | null;
 
   // Metadata
   invocation_time: string;

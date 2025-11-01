@@ -22,6 +22,7 @@ class LLMInvocationResponse(BaseModel):
     response_text: Optional[str] = None
     response_tokens: Optional[int] = None
     parsed_decision: Optional[Dict[str, Any]] = None
+    execution_results: Optional[List[Dict[str, Any]]] = None
 
     # Metadata
     invocation_time: datetime
