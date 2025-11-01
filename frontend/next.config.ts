@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   images: {
     domains: [],
   },
+  // Force new build ID to clear Railway CDN cache
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
 };
 
 export default nextConfig;
