@@ -15,5 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Start server (migrations should be run separately via Railway's release command)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
+# Run initialization and start server
+CMD python scripts/railway_init.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
