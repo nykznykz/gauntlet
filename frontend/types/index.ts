@@ -12,11 +12,22 @@ export interface Competition {
 export interface Participant {
   id: string;
   competition_id: string;
-  llm_identifier: string;
+  name: string;
   llm_provider: string;
   llm_model: string;
+  llm_config: Record<string, any> | null;
   status: "active" | "liquidated" | "disqualified";
-  final_rank: number | null;
+  joined_at: string;
+  current_equity: number;
+  initial_capital: number;
+  peak_equity: number;
+  total_trades: number;
+  winning_trades: number;
+  losing_trades: number;
+  endpoint_url: string | null;
+  timeout_seconds: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Portfolio {
