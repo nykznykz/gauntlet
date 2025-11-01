@@ -115,17 +115,22 @@ class LLMInvoker:
 
                 # Process trading decisions
                 if parsed_decision.decision == "trade" and parsed_decision.orders:
-                    self._process_orders(
+                    execution_results = self._process_orders(
                         participant=participant,
                         competition=competition,
                         portfolio=portfolio,
                         orders=parsed_decision.orders,
                         invocation_id=invocation.id
                     )
+                    invocation.execution_results = execution_results
 
             except Exception as e:
+                # Ensure response_text is preserved even when parsing fails
+                if not invocation.response_text:
+                    invocation.response_text = response_text
                 invocation.status = "invalid_response"
                 invocation.error_message = f"Failed to parse response: {str(e)}"
+                logger.warning(f"Failed to parse LLM response for participant {participant.id}: {str(e)}. Response length: {len(response_text) if response_text else 0}")
 
         except Exception as e:
             response_time_ms = int((time.time() - start_time) * 1000)
@@ -192,20 +197,67 @@ class LLMInvoker:
         portfolio: Portfolio,
         orders: List[LLMOrderDecision],
         invocation_id: UUID
-    ):
-        """Process orders from LLM decision"""
+    ) -> List[dict]:
+        """Process orders from LLM decision and return execution results"""
+
+        execution_results = []
 
         for order_decision in orders:
-            # Validate order
+            # For close actions, get side and quantity from the existing position if not provided
+            side = order_decision.side
+            quantity = order_decision.quantity
             position_id = UUID(order_decision.position_id) if order_decision.position_id else None
+
+            if order_decision.action == "close" and position_id:
+                # Get the position to extract side and quantity if needed
+                position = self.db.query(Position).filter(Position.id == position_id).first()
+                if position:
+                    if side is None:
+                        # For closing, the side is opposite of the position direction
+                        side = "sell" if position.direction == "long" else "buy"
+                    if quantity is None:
+                        quantity = float(position.quantity)
+
+            # Validate that we have required fields
+            if side is None or quantity is None:
+                rejection_reason = "Missing required fields: side and/or quantity"
+                order = Order(
+                    participant_id=participant.id,
+                    competition_id=competition.id,
+                    symbol=order_decision.symbol,
+                    asset_class="crypto",
+                    order_type="market",
+                    side=side or "buy",
+                    quantity=Decimal(str(quantity or 0)),
+                    leverage=Decimal(str(order_decision.leverage)),
+                    status="rejected",
+                    rejection_reason=rejection_reason,
+                    llm_invocation_id=invocation_id,
+                )
+                self.db.add(order)
+                self.db.commit()
+                self.db.refresh(order)
+
+                execution_results.append({
+                    "order_id": str(order.id),
+                    "action": order_decision.action,
+                    "symbol": order_decision.symbol,
+                    "side": side,
+                    "quantity": float(quantity) if quantity else None,
+                    "leverage": float(order_decision.leverage),
+                    "validation_passed": False,
+                    "rejection_reason": rejection_reason,
+                    "status": "rejected"
+                })
+                continue
 
             is_valid, rejection_reason = self.trading_engine.validate_order(
                 participant=participant,
                 competition=competition,
                 portfolio=portfolio,
                 symbol=order_decision.symbol,
-                side=order_decision.side,
-                quantity=Decimal(str(order_decision.quantity)),
+                side=side,
+                quantity=Decimal(str(quantity)),
                 leverage=Decimal(str(order_decision.leverage)),
                 action=order_decision.action,
                 position_id=position_id,
@@ -218,8 +270,8 @@ class LLMInvoker:
                 symbol=order_decision.symbol,
                 asset_class="crypto",  # TODO: determine from symbol
                 order_type="market",
-                side=order_decision.side,
-                quantity=Decimal(str(order_decision.quantity)),
+                side=side,
+                quantity=Decimal(str(quantity)),
                 leverage=Decimal(str(order_decision.leverage)),
                 status="pending" if is_valid else "rejected",
                 rejection_reason=rejection_reason,
@@ -231,8 +283,27 @@ class LLMInvoker:
             self.db.refresh(order)
 
             # Execute if valid
+            execution_status = "rejected"
             if is_valid:
                 self.trading_engine.execute_order(order, order_decision.action)
+                # Refresh to get updated status
+                self.db.refresh(order)
+                execution_status = order.status
+
+            execution_results.append({
+                "order_id": str(order.id),
+                "action": order_decision.action,
+                "symbol": order_decision.symbol,
+                "side": side,
+                "quantity": float(quantity),
+                "leverage": float(order_decision.leverage),
+                "validation_passed": is_valid,
+                "rejection_reason": rejection_reason,
+                "status": execution_status,
+                "executed_price": float(order.executed_price) if order.executed_price else None
+            })
+
+        return execution_results
 
     def _fetch_market_data(self, symbols: List[str]) -> dict:
         """Fetch market data for symbols"""

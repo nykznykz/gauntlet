@@ -135,7 +135,8 @@ class SchedulerService:
             logger.info("Starting LLM invocation task...")
 
             # Get all active competitions (not ended yet)
-            now = datetime.now()
+            from datetime import timezone
+            now = datetime.now(timezone.utc)
             active_competitions = (
                 db.query(Competition)
                 .filter(Competition.end_time > now)
