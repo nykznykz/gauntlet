@@ -58,6 +58,18 @@ class SchedulerService:
         self._is_running = True
         logger.info("Background scheduler started successfully")
 
+        # Trigger first invocation immediately in background (non-blocking)
+        import threading
+        def trigger_first_invocation():
+            import time
+            time.sleep(2)  # Wait for app to fully start
+            logger.info("Triggering first LLM invocation...")
+            self._invoke_all_participants()
+
+        thread = threading.Thread(target=trigger_first_invocation, daemon=True)
+        thread.start()
+        logger.info("Scheduled first LLM invocation to run in 2 seconds")
+
     def shutdown(self):
         """Shutdown the scheduler gracefully"""
         if self._is_running:
