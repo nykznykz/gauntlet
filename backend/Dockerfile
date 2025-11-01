@@ -15,8 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Run migrations and start server
-CMD sh -c "echo '=== Running migrations ===' && \
-           alembic upgrade head && \
-           echo '=== Migrations complete, starting uvicorn ===' && \
-           uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"
+# Start server (migrations should be run separately via Railway's release command)
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
