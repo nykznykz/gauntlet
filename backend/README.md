@@ -77,6 +77,61 @@ Once the server is running, visit:
 - **Interactive API docs**: http://localhost:8000/docs
 - **Alternative docs**: http://localhost:8000/redoc
 
+## API Authentication
+
+The API uses API key authentication to protect write operations and administrative endpoints.
+
+### Authentication Requirements
+
+**Protected Endpoints** (require `X-API-Key` header):
+- All `POST` endpoints for creating/modifying data:
+  - `POST /api/v1/competitions` - Create competition
+  - `POST /api/v1/competitions/{id}/start` - Start competition
+  - `POST /api/v1/competitions/{id}/stop` - Stop competition
+  - `POST /api/v1/participants/competitions/{competition_id}/participants` - Register participant
+- All admin/internal endpoints:
+  - `POST /api/v1/internal/reset-competition` - Reset competition (deletes ALL data)
+  - `POST /api/v1/internal/invoke-participants` - Trigger LLM invocations
+  - `POST /api/v1/internal/trigger-invocation/{participant_id}` - Trigger single invocation
+
+**Public Endpoints** (no authentication required):
+- All `GET` endpoints for reading data:
+  - `GET /api/v1/competitions` - List competitions
+  - `GET /api/v1/competitions/{id}` - Get competition details
+  - `GET /api/v1/participants/{id}` - Get participant details
+  - `GET /api/v1/participants/{id}/portfolio` - Get portfolio
+  - `GET /api/v1/participants/{id}/positions` - Get positions
+  - `GET /api/v1/participants/{id}/trades` - Get trades
+  - `GET /api/v1/leaderboard/competitions/{id}/leaderboard` - Get leaderboard
+
+### Setting the API Key
+
+The API key is configured via the `API_KEY` environment variable in `.env`:
+
+```env
+API_KEY=your-secure-api-key-here
+```
+
+For production, generate a secure random key:
+
+```bash
+# Generate a secure API key
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+### Using the API Key
+
+Include the API key in the `X-API-Key` header for protected endpoints:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/internal/reset-competition" \
+  -H "X-API-Key: your-api-key-here"
+```
+
+**Response Codes:**
+- `401 Unauthorized` - Missing or invalid API key
+- `422 Unprocessable Entity` - Missing `X-API-Key` header
+
 ## Key API Endpoints
 
 ### Competitions

@@ -6,7 +6,7 @@ from typing import List
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from app.api.dependencies import get_db_session
+from app.api.dependencies import get_db_session, verify_api_key
 from app.models.participant import Participant
 from app.models.competition import Competition
 from app.models.portfolio import Portfolio
@@ -32,7 +32,8 @@ class InvokeParticipantsResponse(BaseModel):
 def invoke_participants(
     request: InvokeParticipantsRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Trigger LLM invocations for all active participants in a competition"""
 
@@ -73,7 +74,8 @@ def _invoke_participant_task(participant_id: UUID):
 @router.post("/trigger-invocation/{participant_id}")
 def trigger_single_invocation(
     participant_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Manually trigger a single LLM invocation (for testing)"""
     invoker = LLMInvoker(db)
@@ -154,7 +156,10 @@ class ResetCompetitionResponse(BaseModel):
 
 
 @router.post("/reset-competition", response_model=ResetCompetitionResponse)
-def reset_competition(db: Session = Depends(get_db_session)):
+def reset_competition(
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
+):
     """
     Reset the competition: delete all data and recreate fresh competition
     WARNING: This deletes ALL competition data!

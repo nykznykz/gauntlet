@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
-from app.api.dependencies import get_db_session
+from app.api.dependencies import get_db_session, verify_api_key
 from app.models.participant import Participant
 from app.models.competition import Competition
 from app.models.portfolio import Portfolio
@@ -27,7 +27,8 @@ router = APIRouter(prefix="/participants", tags=["participants"])
 def create_participant(
     competition_id: UUID,
     participant_data: ParticipantCreate,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Register a participant in a competition"""
     # Verify competition exists

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from app.api.dependencies import get_db_session
+from app.api.dependencies import get_db_session, verify_api_key
 from app.models.competition import Competition
 from app.models.participant import Participant
 from app.models.portfolio_history import PortfolioHistory
@@ -16,7 +16,8 @@ router = APIRouter(prefix="/competitions", tags=["competitions"])
 @router.post("", response_model=CompetitionResponse, status_code=201)
 def create_competition(
     competition_data: CompetitionCreate,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Create a new competition"""
     competition = Competition(**competition_data.model_dump())
@@ -70,7 +71,8 @@ def get_competition(
 @router.post("/{competition_id}/start")
 def start_competition(
     competition_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Start a competition"""
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
@@ -92,7 +94,8 @@ def start_competition(
 @router.post("/{competition_id}/stop")
 def stop_competition(
     competition_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db_session),
+    api_key: str = Depends(verify_api_key)
 ):
     """Stop a competition"""
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
