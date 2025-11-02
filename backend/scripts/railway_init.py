@@ -78,7 +78,7 @@ PARTICIPANTS_CONFIG = [
         "llm_model": "deepseek-chat",
         "llm_config": {
             "temperature": 0.7,
-            "max_tokens": 4096,
+            "max_tokens": 8000,
         }
     },
 ]
