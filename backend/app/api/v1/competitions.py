@@ -1,7 +1,7 @@
 """Competition API endpoints"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 from app.api.dependencies import verify_api_key
 from app.db.session import get_db
@@ -9,7 +9,7 @@ from app.models.competition import Competition
 from app.models.participant import Participant
 from app.models.portfolio_history import PortfolioHistory
 from app.schemas.competition import CompetitionCreate, CompetitionResponse, CompetitionList
-from app.schemas.portfolio_history import MultiParticipantHistoryResponse, PortfolioHistoryResponse
+from app.schemas.portfolio_history import MultiParticipantHistoryResponse
 
 router = APIRouter(prefix="/competitions", tags=["competitions"])
 
