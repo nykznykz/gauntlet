@@ -76,16 +76,26 @@ class CFDEngine:
         closing_price: Decimal
     ) -> dict:
         """Close a position and calculate realized P&L"""
-        # Update position with final price
-        self.update_position_price(position, closing_price)
+        # Update position with final price (but don't commit yet)
+        metrics = self.calculate_position_metrics(
+            side=position.side,
+            quantity=position.quantity,
+            entry_price=position.entry_price,
+            current_price=closing_price,
+            leverage=position.leverage,
+        )
+
+        position.current_price = closing_price
+        position.notional_value = metrics["notional_value"]
+        position.unrealized_pnl = metrics["unrealized_pnl"]
+        position.unrealized_pnl_pct = metrics["unrealized_pnl_pct"]
 
         realized_pnl = position.unrealized_pnl
         realized_pnl_pct = position.unrealized_pnl_pct
         margin_released = position.margin_required
 
-        # Delete position
+        # Delete position (but don't commit - let caller handle transaction)
         self.db.delete(position)
-        self.db.commit()
 
         return {
             "realized_pnl": realized_pnl,

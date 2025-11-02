@@ -210,10 +210,12 @@ class TradingEngine:
         notional_value = calculate_notional_value(order.quantity, price)
 
         # Create trade record
+        # Note: position_id is set to None because the position is being deleted in this transaction
+        # The FK constraint has ondelete="SET NULL" so this avoids FK constraint violations
         trade = Trade(
             order_id=order.id,
             participant_id=participant.id,
-            position_id=position.id,
+            position_id=None,  # Position is being deleted, so don't reference it
             symbol=order.symbol,
             side=order.side,
             quantity=order.quantity,
@@ -232,10 +234,11 @@ class TradingEngine:
 
         # Update participant stats
         participant.total_trades += 1
-        if close_result["realized_pnl"] > 0:
+        if close_result["realized_pnl"] > Decimal("0"):
             participant.winning_trades += 1
-        else:
+        elif close_result["realized_pnl"] < Decimal("0"):
             participant.losing_trades += 1
+        # else: breakeven trades (PnL == 0) don't count as wins or losses
 
         self.db.add(participant)
         self.db.commit()

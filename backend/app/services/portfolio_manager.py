@@ -143,7 +143,7 @@ class PortfolioManager:
         portfolio.realized_pnl += realized_pnl
 
         self.db.add(portfolio)
-        self.db.commit()
+        # Don't commit here - let caller handle transaction atomicity
 
         return self.update_portfolio(portfolio)
 
