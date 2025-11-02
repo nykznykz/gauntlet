@@ -140,6 +140,36 @@ export function PerformanceCharts() {
     }
   };
 
+  // Calculate dynamic Y-axis domain for better visibility
+  const calculateYAxisDomain = () => {
+    const allValues: number[] = [];
+    chartData.forEach((point) => {
+      data.participants.forEach((participant) => {
+        const value = point[participant.participant_name];
+        if (typeof value === 'number') {
+          allValues.push(value);
+        }
+      });
+    });
+
+    if (allValues.length === 0) return [0, 10000];
+
+    const minValue = Math.min(...allValues);
+    const maxValue = Math.max(...allValues);
+    const range = maxValue - minValue;
+
+    // If range is very small (< 1% of max), add more padding to zoom in
+    const paddingPercent = range < maxValue * 0.01 ? 0.05 : 0.1;
+    const padding = Math.max(range * paddingPercent, maxValue * 0.02);
+
+    return [
+      Math.max(0, Math.floor(minValue - padding)),
+      Math.ceil(maxValue + padding),
+    ];
+  };
+
+  const yAxisDomain = calculateYAxisDomain();
+
   return (
     <div className="w-full h-96">
       <ResponsiveContainer width="100%" height="100%">
@@ -158,6 +188,7 @@ export function PerformanceCharts() {
             stroke="#9ca3af"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => `$${value.toLocaleString()}`}
+            domain={yAxisDomain}
           />
           <Tooltip
             labelFormatter={formatTooltipLabel}
