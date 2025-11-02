@@ -109,6 +109,8 @@ export const marketDataApi = {
   latest: (symbol: string) => apiClient.get<any>(`/api/market-data/${symbol}/latest`),
   history: (symbol: string, params?: { start?: string; end?: string; interval?: string }) =>
     apiClient.get<any>(`/api/market-data/${symbol}/history?${new URLSearchParams(params as any)}`),
+  tickers: (symbols?: string) =>
+    apiClient.get<{ tickers: any[] }>(`/api/v1/market-data/tickers${symbols ? `?symbols=${symbols}` : ''}`),
 };
 
 // Leaderboard API

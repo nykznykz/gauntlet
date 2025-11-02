@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.v1 import competitions, participants, leaderboard, internal
+from app.api.v1 import competitions, participants, leaderboard, internal, market_data
 from app.services.scheduler import scheduler_service
 
 # Configure logging
@@ -49,6 +49,7 @@ app.include_router(competitions.router, prefix="/api/v1")
 app.include_router(participants.router, prefix="/api/v1")
 app.include_router(leaderboard.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
+app.include_router(market_data.router, prefix="/api/v1")
 
 
 @app.get("/")

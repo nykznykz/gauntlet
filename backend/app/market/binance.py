@@ -55,14 +55,22 @@ class BinanceProvider:
         try:
             ticker = self.exchange.fetch_ticker(symbol)
 
+            # Calculate 24h change amount if percentage is available
+            last_price = ticker.get('last', 0)
+            percentage = ticker.get('percentage', 0)
+            change_24h = (last_price * percentage / 100) if last_price and percentage else 0
+
             return {
                 "symbol": symbol,
-                "price": Decimal(str(ticker['last'])),
-                "bid": Decimal(str(ticker['bid'])) if ticker['bid'] else None,
-                "ask": Decimal(str(ticker['ask'])) if ticker['ask'] else None,
-                "high_24h": Decimal(str(ticker['high'])) if ticker['high'] else None,
-                "low_24h": Decimal(str(ticker['low'])) if ticker['low'] else None,
+                "lastPrice": str(ticker['last']) if ticker.get('last') else "0",
+                "price": Decimal(str(ticker['last'])) if ticker.get('last') else Decimal('0'),
+                "bid": Decimal(str(ticker['bid'])) if ticker.get('bid') else None,
+                "ask": Decimal(str(ticker['ask'])) if ticker.get('ask') else None,
+                "high_24h": Decimal(str(ticker['high'])) if ticker.get('high') else None,
+                "low_24h": Decimal(str(ticker['low'])) if ticker.get('low') else None,
                 "volume_24h": Decimal(str(ticker['quoteVolume'])) if ticker.get('quoteVolume') else None,
+                "priceChange": str(change_24h),
+                "priceChangePercent": str(ticker['percentage']) if ticker.get('percentage') else "0",
                 "change_24h_pct": Decimal(str(ticker['percentage'])) if ticker.get('percentage') else None,
             }
         except Exception as e:

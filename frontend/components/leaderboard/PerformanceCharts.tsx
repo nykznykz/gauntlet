@@ -16,6 +16,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
+import { getParticipantLogo } from '@/lib/llm-logos';
+import Image from 'next/image';
 
 // Color palette for different traders
 const TRADER_COLORS = [
@@ -33,6 +35,79 @@ interface ChartDataPoint {
   timestamp: string;
   [key: string]: number | string;
 }
+
+// Custom Legend component with LLM logos
+interface CustomLegendProps {
+  payload?: Array<{
+    value: string;
+    color: string;
+  }>;
+}
+
+const CustomLegend = ({ payload }: CustomLegendProps) => {
+  if (!payload) return null;
+
+  return (
+    <div className="flex flex-wrap justify-center gap-4 pt-4">
+      {payload.map((entry, index) => {
+        const logoPath = getParticipantLogo(entry.value);
+        return (
+          <div key={`legend-${index}`} className="flex items-center gap-2">
+            {logoPath ? (
+              <Image
+                src={logoPath}
+                alt={entry.value}
+                width={20}
+                height={20}
+                className="rounded"
+              />
+            ) : (
+              <div
+                className="w-5 h-0.5"
+                style={{ backgroundColor: entry.color }}
+              />
+            )}
+            <span className="text-sm text-gray-300">{entry.value}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Custom dot component with LLM logo
+interface CustomDotProps {
+  cx?: number;
+  cy?: number;
+  payload?: any;
+  dataKey?: string;
+  index?: number;
+  chartData?: ChartDataPoint[];
+}
+
+const CustomDot = ({ cx, cy, payload, dataKey, index, chartData }: CustomDotProps) => {
+  // Only show logo at the last point (rightmost)
+  if (!chartData || index !== chartData.length - 1 || !dataKey) return null;
+
+  const logoPath = getParticipantLogo(dataKey as string);
+  if (!logoPath || cx === undefined || cy === undefined) return null;
+
+  return (
+    <g>
+      {/* Background circle */}
+      <circle cx={cx} cy={cy} r={16} fill="white" opacity={0.9} />
+      {/* Logo image */}
+      <image
+        href={logoPath}
+        x={cx - 12}
+        y={cy - 12}
+        width={24}
+        height={24}
+        clipPath="circle(12px at 12px 12px)"
+      />
+    </g>
+  );
+};
 
 export function PerformanceCharts() {
   const selectedCompetitionId = useAppStore((state) => state.selectedCompetitionId);
@@ -201,8 +276,8 @@ export function PerformanceCharts() {
             }}
           />
           <Legend
+            content={<CustomLegend />}
             wrapperStyle={{ paddingTop: '20px' }}
-            iconType="line"
           />
 
           <ReferenceLine
@@ -219,7 +294,9 @@ export function PerformanceCharts() {
               dataKey={participant.participant_name}
               stroke={TRADER_COLORS[index % TRADER_COLORS.length]}
               strokeWidth={2}
-              dot={false}
+              dot={(props) => (
+                <CustomDot {...props} chartData={chartData} />
+              )}
               activeDot={{ r: 4 }}
               name={participant.participant_name}
             />
