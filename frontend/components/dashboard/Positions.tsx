@@ -15,7 +15,7 @@ export function Positions() {
     queryFn: async () => {
       if (!selectedParticipantId) return null;
       const response = await positionApi.list(selectedParticipantId);
-      return response.data;
+      return response.data.positions;
     },
     enabled: !!selectedParticipantId,
     refetchInterval: 5000,
