@@ -95,13 +95,13 @@ export const portfolioApi = {
 // Position APIs
 export const positionApi = {
   list: (participantId: string) =>
-    apiClient.get<Position[]>(`/api/v1/participants/${participantId}/positions`),
+    apiClient.get<{ positions: Position[] }>(`/api/v1/participants/${participantId}/positions`),
 };
 
 // Trade APIs
 export const tradeApi = {
   list: (participantId: string, limit?: number) =>
-    apiClient.get<Trade[]>(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
+    apiClient.get<{ trades: Trade[] }>(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
 };
 
 // Market Data APIs
@@ -114,7 +114,7 @@ export const marketDataApi = {
 // Leaderboard API
 export const leaderboardApi = {
   get: (competitionId: string) =>
-    apiClient.get<LeaderboardEntry[]>(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
+    apiClient.get<{ leaderboard: LeaderboardEntry[] }>(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
 };
 
 // Invocation APIs
