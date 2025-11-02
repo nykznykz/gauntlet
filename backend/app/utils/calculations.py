@@ -80,14 +80,6 @@ def check_liquidation(
     return margin_level < liquidation_threshold
 
 
-def calculate_max_position_size(
-    equity: Decimal,
-    max_position_size_pct: Decimal
-) -> Decimal:
-    """Calculate maximum allowed position notional value"""
-    return equity * (max_position_size_pct / Decimal("100"))
-
-
 def calculate_win_rate(winning_trades: int, total_trades: int) -> Decimal:
     """Calculate win rate percentage"""
     if total_trades == 0:

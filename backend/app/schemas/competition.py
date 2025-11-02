@@ -1,5 +1,5 @@
 """Competition schemas"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
@@ -15,12 +15,16 @@ class CompetitionBase(BaseModel):
     invocation_interval_minutes: int = 15
     initial_capital: Decimal = Decimal("100000.00")
     max_leverage: Decimal = Decimal("10.00")
-    max_position_size_pct: Decimal = Decimal("20.00")
     allowed_asset_classes: List[str] = ["crypto"]
-    margin_requirement_pct: Decimal = Decimal("10.00")
     maintenance_margin_pct: Decimal = Decimal("5.00")
     max_participants: int = 5
     market_hours_only: bool = True
+
+    @computed_field
+    @property
+    def margin_requirement_pct(self) -> Decimal:
+        """Calculate margin requirement from max leverage: margin_pct = 100 / leverage"""
+        return Decimal("100") / self.max_leverage
 
 
 class CompetitionCreate(CompetitionBase):
