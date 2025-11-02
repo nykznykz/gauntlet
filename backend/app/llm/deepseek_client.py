@@ -51,8 +51,18 @@ class DeepSeekClient(BaseLLMClient):
                 temperature=temperature,
             )
 
-            message = response.choices[0].message
+            choice = response.choices[0]
+            message = choice.message
             response_text = message.content or ""
+
+            # Check if response was truncated
+            if choice.finish_reason != "stop":
+                raise Exception(
+                    f"Response generation did not complete normally. "
+                    f"Finish reason: {choice.finish_reason}. "
+                    f"Response length: {len(response_text)} chars. "
+                    f"Consider increasing max_tokens (current: {max_tokens})"
+                )
 
             prompt_tokens = response.usage.prompt_tokens
             response_tokens = response.usage.completion_tokens
