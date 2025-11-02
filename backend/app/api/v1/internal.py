@@ -13,7 +13,7 @@ from app.models.portfolio import Portfolio
 from app.models.portfolio_history import PortfolioHistory
 from app.models.position import Position
 from app.models.trade import Trade
-from app.models.invocation import Invocation
+from app.models.llm_invocation import LLMInvocation
 from app.services.llm_invoker import LLMInvoker
 
 router = APIRouter(prefix="/internal", tags=["internal"])
@@ -164,7 +164,7 @@ def reset_competition(db: Session = Depends(get_db_session)):
         deleted_counts = {}
 
         # Delete in correct order to respect foreign key constraints
-        deleted_counts['invocations'] = db.query(Invocation).delete()
+        deleted_counts['invocations'] = db.query(LLMInvocation).delete()
         deleted_counts['portfolio_history'] = db.query(PortfolioHistory).delete()
         deleted_counts['trades'] = db.query(Trade).delete()
         deleted_counts['positions'] = db.query(Position).delete()
