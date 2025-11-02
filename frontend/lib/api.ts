@@ -1,10 +1,12 @@
 import { Competition, Participant, Portfolio, Position, Trade, MultiParticipantHistory, LeaderboardEntry, LLMInvocationList } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BUILD_VERSION = '2025-11-02T06:13:00Z'; // Cache-busting constant
 
 export interface ApiResponse<T> {
   data: T;
   error?: string;
+  _v?: string; // Build version for cache busting
 }
 
 class ApiClient {
