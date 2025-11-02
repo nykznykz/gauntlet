@@ -173,6 +173,14 @@ You may:
 - Close existing positions (action: "close", include position_id)
 - Do nothing (decision: "hold")
 
+## LEVERAGE REQUIREMENT
+
+IMPORTANT: This competition requires MINIMUM 5x leverage on all new positions.
+- Using leverage below 5x may result in order rejection
+- Recommended leverage range: 5-10x
+- Higher leverage amplifies both gains and losses
+- This is an aggressive trading competition that rewards bold positioning
+
 CRITICAL - POSITION SIZING RULES:
 The system validates that (quantity × current_price) ≤ max_position_size_dollars
 
