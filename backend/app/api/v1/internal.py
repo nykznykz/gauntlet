@@ -178,21 +178,32 @@ def reset_competition(db: Session = Depends(get_db_session)):
         now = datetime.now(timezone.utc)
         config = COMPETITION_CONFIG
 
-        competition = Competition(
-            name=config["name"],
-            description=config["description"],
-            status="active",
-            start_time=now,
-            end_time=now + timedelta(days=config["duration_days"]),
-            initial_capital=config["initial_capital"],
-            max_leverage=config["max_leverage"],
-            maintenance_margin_pct=config["maintenance_margin_pct"],
-            allowed_asset_classes=config["allowed_asset_classes"],
-            max_participants=config["max_participants"],
-            invocation_interval_minutes=config["invocation_interval_minutes"],
-            market_hours_only=config["market_hours_only"],
-        )
+        # Calculate margin_requirement_pct for backwards compatibility with old schema
+        margin_requirement_pct = Decimal("100") / config["max_leverage"]
 
+        competition_data = {
+            "name": config["name"],
+            "description": config["description"],
+            "status": "active",
+            "start_time": now,
+            "end_time": now + timedelta(days=config["duration_days"]),
+            "initial_capital": config["initial_capital"],
+            "max_leverage": config["max_leverage"],
+            "maintenance_margin_pct": config["maintenance_margin_pct"],
+            "allowed_asset_classes": config["allowed_asset_classes"],
+            "max_participants": config["max_participants"],
+            "invocation_interval_minutes": config["invocation_interval_minutes"],
+            "market_hours_only": config["market_hours_only"],
+        }
+
+        # Add margin_requirement_pct if column exists in DB (for backwards compatibility)
+        from sqlalchemy import inspect
+        inspector = inspect(db.bind)
+        columns = [col['name'] for col in inspector.get_columns('competitions')]
+        if 'margin_requirement_pct' in columns:
+            competition_data['margin_requirement_pct'] = margin_requirement_pct
+
+        competition = Competition(**competition_data)
         db.add(competition)
         db.commit()
         db.refresh(competition)

@@ -15,5 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Run initialization and start server
-CMD python scripts/railway_init.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
+# Run migrations, initialization, and start server
+CMD alembic upgrade head && python scripts/railway_init.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
