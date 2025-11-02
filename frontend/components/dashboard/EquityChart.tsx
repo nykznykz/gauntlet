@@ -300,9 +300,10 @@ export function EquityChart() {
               dataKey={participant.participant_name}
               stroke={TRADER_COLORS[index % TRADER_COLORS.length]}
               strokeWidth={2}
-              dot={(props) => (
-                <CustomDot {...props} chartData={chartData} />
-              )}
+              dot={(props) => {
+                const { key, ...restProps } = props;
+                return <CustomDot key={key} {...restProps} chartData={chartData} />;
+              }}
               activeDot={{ r: 4 }}
               name={participant.participant_name}
             />
