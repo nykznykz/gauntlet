@@ -41,11 +41,9 @@ COMPETITION_CONFIG = {
     "name": "LLM Trading Competition - Battle Royale",
     "description": "A competitive trading simulation where different LLM agents compete to maximize returns using CFD trading strategies.",
     "initial_capital": Decimal("10000.00"),
-    "max_leverage": Decimal("10.0"),
-    "margin_requirement_pct": Decimal("10.0"),  # 10% margin requirement
-    "maintenance_margin_pct": Decimal("5.0"),   # 5% maintenance margin (liquidation threshold)
+    "max_leverage": Decimal("40.0"),  # Max 40x leverage (implies 2.5% margin requirement)
+    "maintenance_margin_pct": Decimal("1.25"),  # 1.25% maintenance margin (liquidation threshold, half of margin requirement)
     "allowed_asset_classes": ["crypto"],  # Focus on crypto for now
-    "max_position_size_pct": Decimal("50.0"),  # Max 50% of equity per position
     "max_participants": 20,
     "invocation_interval_minutes": 5,  # Invoke LLMs every 5 minutes
     "market_hours_only": False,  # Trade 24/7 for crypto
@@ -142,10 +140,8 @@ def create_competition(db: Session, config: dict) -> Competition:
         end_time=now + timedelta(days=config["duration_days"]),
         initial_capital=config["initial_capital"],
         max_leverage=config["max_leverage"],
-        margin_requirement_pct=config["margin_requirement_pct"],
         maintenance_margin_pct=config["maintenance_margin_pct"],
         allowed_asset_classes=config["allowed_asset_classes"],
-        max_position_size_pct=config["max_position_size_pct"],
         max_participants=config["max_participants"],
         invocation_interval_minutes=config["invocation_interval_minutes"],
         market_hours_only=config["market_hours_only"],
@@ -160,7 +156,7 @@ def create_competition(db: Session, config: dict) -> Competition:
     print(f"   - Duration: {config['duration_days']} days")
     print(f"   - Initial Capital: ${config['initial_capital']}")
     print(f"   - Max Leverage: {config['max_leverage']}x")
-    print(f"   - Margin Requirement: {config['margin_requirement_pct']}%")
+    print(f"   - Margin Requirement: {competition.margin_requirement_pct}% (derived from leverage)")
     print(f"   - Maintenance Margin: {config['maintenance_margin_pct']}%")
     print(f"   - Invocation Interval: {config['invocation_interval_minutes']} minutes")
 
@@ -243,7 +239,7 @@ def print_summary(competition: Competition, participants: list):
     print(f"\n💰 Trading Parameters:")
     print(f"   Initial Capital: ${competition.initial_capital}")
     print(f"   Max Leverage: {competition.max_leverage}x")
-    print(f"   Margin Requirement: {competition.margin_requirement_pct}%")
+    print(f"   Margin Requirement: {competition.margin_requirement_pct}% (derived from leverage)")
     print(f"   Maintenance Margin: {competition.maintenance_margin_pct}%")
     print(f"   Allowed Asset Classes: {', '.join(competition.allowed_asset_classes)}")
     print(f"\n👥 Participants ({len(participants)}):")

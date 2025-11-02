@@ -15,7 +15,8 @@ class AnthropicClient(BaseLLMClient):
     def invoke(
         self,
         prompt: str,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        system_prompt: Optional[str] = None
     ) -> tuple[str, int, int]:
         """Invoke Claude with a prompt"""
 
@@ -25,14 +26,21 @@ class AnthropicClient(BaseLLMClient):
         temperature = config.get("temperature", 0.7)
 
         try:
-            response = self.client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                messages=[
+            # Build API call parameters
+            api_params = {
+                "model": model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": [
                     {"role": "user", "content": prompt}
                 ]
-            )
+            }
+
+            # Add system prompt if provided
+            if system_prompt:
+                api_params["system"] = system_prompt
+
+            response = self.client.messages.create(**api_params)
 
             response_text = response.content[0].text
             prompt_tokens = response.usage.input_tokens

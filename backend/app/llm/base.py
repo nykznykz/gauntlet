@@ -10,10 +10,16 @@ class BaseLLMClient(ABC):
     def invoke(
         self,
         prompt: str,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        system_prompt: Optional[str] = None
     ) -> tuple[str, int, int]:
         """
         Invoke the LLM with a prompt
+
+        Args:
+            prompt: The user message/prompt
+            config: Optional configuration parameters
+            system_prompt: Optional system prompt (static instructions)
 
         Returns:
             tuple: (response_text, prompt_tokens, response_tokens)

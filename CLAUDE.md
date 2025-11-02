@@ -185,3 +185,4 @@ The frontend is partially implemented:
 - Leverage formula: position_size = cash * leverage, margin_required = position_size / leverage
 - Always add new dependencies to requirements.txt (backend) or package.json (frontend)
 - always run npm run build before deployment to reliably test the build
+- always activate the venv before running python scripts

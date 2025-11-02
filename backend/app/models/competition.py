@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, Text, Integer, Numeric, TIMESTAMP, ARRAY,
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from decimal import Decimal
 import uuid
 from app.db.base import Base
 
@@ -26,11 +27,9 @@ class Competition(Base):
     # Trading Rules
     initial_capital = Column(Numeric(20, 2), nullable=False, default=100000.00)
     max_leverage = Column(Numeric(5, 2), nullable=False, default=10.00)
-    max_position_size_pct = Column(Numeric(5, 2), default=20.00)
     allowed_asset_classes = Column(ARRAY(Text), default=["crypto", "stocks", "indices", "commodities"])
 
     # CFD Configuration
-    margin_requirement_pct = Column(Numeric(5, 2), nullable=False, default=10.00)
     maintenance_margin_pct = Column(Numeric(5, 2), nullable=False, default=5.00)
 
     # Competition Settings
@@ -44,5 +43,10 @@ class Competition(Base):
     __table_args__ = (
         CheckConstraint("end_time > start_time", name="valid_dates"),
         CheckConstraint("max_leverage >= 1.0 AND max_leverage <= 100.0", name="valid_leverage"),
-        CheckConstraint("maintenance_margin_pct < margin_requirement_pct", name="valid_margin"),
+        CheckConstraint("maintenance_margin_pct < (100.0 / max_leverage)", name="valid_margin"),
     )
+
+    @property
+    def margin_requirement_pct(self) -> Decimal:
+        """Calculate margin requirement from max leverage: margin_pct = 100 / leverage"""
+        return Decimal("100") / self.max_leverage
