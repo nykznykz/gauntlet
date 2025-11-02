@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
-from app.api.dependencies import get_db_session, verify_api_key
+from app.api.dependencies import verify_api_key
+from app.db.session import get_db
 from app.models.participant import Participant
 from app.models.competition import Competition
 from app.models.portfolio import Portfolio
@@ -27,7 +28,7 @@ router = APIRouter(prefix="/participants", tags=["participants"])
 def create_participant(
     competition_id: UUID,
     participant_data: ParticipantCreate,
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
     """Register a participant in a competition"""
@@ -70,7 +71,7 @@ def create_participant(
 @router.get("/{participant_id}", response_model=ParticipantResponse)
 def get_participant(
     participant_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant details"""
     participant = db.query(Participant).filter(Participant.id == participant_id).first()
@@ -84,7 +85,7 @@ def get_participant(
 @router.get("/{participant_id}/portfolio", response_model=PortfolioResponse)
 def get_participant_portfolio(
     participant_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's portfolio"""
     portfolio = db.query(Portfolio).filter(Portfolio.participant_id == participant_id).first()
@@ -98,7 +99,7 @@ def get_participant_portfolio(
 @router.get("/{participant_id}/positions", response_model=PositionList)
 def get_participant_positions(
     participant_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's current positions"""
     positions = db.query(Position).filter(Position.participant_id == participant_id).all()
@@ -111,7 +112,7 @@ def get_participant_trades(
     participant_id: UUID,
     limit: int = 50,
     offset: int = 0,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's trade history"""
     query = db.query(Trade).filter(Trade.participant_id == participant_id).order_by(Trade.executed_at.desc())
@@ -130,7 +131,7 @@ def get_participant_trades(
 @router.get("/{participant_id}/performance", response_model=ParticipantPerformance)
 def get_participant_performance(
     participant_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's performance metrics"""
     participant = db.query(Participant).filter(Participant.id == participant_id).first()
@@ -159,7 +160,7 @@ def get_participant_performance(
 def get_participant_history(
     participant_id: UUID,
     limit: int = 500,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's portfolio history for equity curve"""
     participant = db.query(Participant).filter(Participant.id == participant_id).first()
@@ -186,7 +187,7 @@ def get_participant_history(
 @router.get("/competitions/{competition_id}/all", response_model=List[ParticipantResponse])
 def list_competition_participants(
     competition_id: UUID,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """List all participants in a competition"""
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
@@ -208,7 +209,7 @@ def get_participant_invocations(
     limit: int = 50,
     offset: int = 0,
     status: str = None,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get participant's LLM invocation logs with optional status filtering"""
     # Verify participant exists

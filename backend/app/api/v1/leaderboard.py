@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import List
 from pydantic import BaseModel
 from decimal import Decimal
-from app.api.dependencies import get_db_session
+from app.db.session import get_db
 from app.models.participant import Participant
 from app.models.competition import Competition
 from app.utils.calculations import calculate_win_rate
@@ -34,7 +34,7 @@ def get_competition_leaderboard(
     competition_id: UUID,
     metric: str = "equity",
     limit: int = 10,
-    db: Session = Depends(get_db_session)
+    db: Session = Depends(get_db)
 ):
     """Get competition leaderboard"""
     # Verify competition exists
