@@ -1,7 +1,7 @@
 """LLM prompt builder"""
 import json
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from app.models.competition import Competition
 from app.models.participant import Participant
 from app.models.portfolio import Portfolio
@@ -19,22 +19,30 @@ class PromptBuilder:
         positions: List[Position],
         market_data: Dict[str, Any],
         leaderboard: List[Dict[str, Any]]
-    ) -> str:
-        """Build complete trading prompt with context"""
+    ) -> Tuple[str, str]:
+        """
+        Build complete trading prompt with context
 
-        prompt_data = {
+        Returns:
+            Tuple[str, str]: (system_prompt, user_prompt)
+        """
+
+        # System prompt contains static instructions and rules
+        system_prompt = self._build_system_prompt()
+
+        # User prompt contains dynamic data
+        user_prompt_data = {
             "competition_context": self._build_competition_context(competition, participant),
             "portfolio": self._build_portfolio_context(portfolio, positions),
             "market_data": market_data,
             "trading_rules": self._build_trading_rules(competition, portfolio),
             "leaderboard": leaderboard,
-            "instructions": self._build_instructions(),
         }
 
         # Convert to formatted JSON
-        prompt = json.dumps(prompt_data, indent=2, default=str)
+        user_prompt = json.dumps(user_prompt_data, indent=2, default=str)
 
-        return prompt
+        return system_prompt, user_prompt
 
     def _build_competition_context(
         self,
@@ -105,10 +113,10 @@ class PromptBuilder:
             "market_hours_only": competition.market_hours_only,
         }
 
-    def _build_instructions(self) -> str:
-        """Build instructions section"""
+    def _build_system_prompt(self) -> str:
+        """Build system prompt with static instructions and rules"""
 
-        return """Based on the current market conditions and your portfolio, decide on your next trading action.
+        return """You are an AI trading agent participating in an LLM Trading Competition. You will receive market data, your portfolio state, and competition information. Based on this information, you must decide on your next trading action.
 
 You may:
 - Open new positions (action: "open", side: "buy" or "sell")

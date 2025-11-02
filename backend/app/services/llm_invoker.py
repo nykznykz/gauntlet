@@ -71,8 +71,8 @@ class LLMInvoker:
         # Get leaderboard
         leaderboard = self._get_leaderboard(competition.id)
 
-        # Build prompt
-        prompt_text = prompt_builder.build_trading_prompt(
+        # Build prompt (now returns system and user prompts)
+        system_prompt, user_prompt = prompt_builder.build_trading_prompt(
             competition=competition,
             participant=participant,
             portfolio=portfolio,
@@ -81,25 +81,26 @@ class LLMInvoker:
             leaderboard=leaderboard,
         )
 
-        # Create invocation record
+        # Create invocation record (store user prompt for compatibility)
         invocation = LLMInvocation(
             participant_id=participant.id,
             competition_id=competition.id,
-            prompt_text=prompt_text,
+            prompt_text=user_prompt,  # Store user prompt for now
             status="pending",
         )
         self.db.add(invocation)
         self.db.commit()
         self.db.refresh(invocation)
 
-        # Invoke LLM
+        # Invoke LLM with both prompts
         start_time = time.time()
 
         try:
             llm_client = self._get_llm_client(participant.llm_provider)
             response_text, prompt_tokens, response_tokens = llm_client.invoke(
-                prompt_text,
-                config=participant.llm_config or {}
+                prompt=user_prompt,
+                config=participant.llm_config or {},
+                system_prompt=system_prompt
             )
 
             response_time_ms = int((time.time() - start_time) * 1000)

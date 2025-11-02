@@ -29,7 +29,8 @@ class AzureOpenAIClient(BaseLLMClient):
     def invoke(
         self,
         prompt: str,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        system_prompt: Optional[str] = None
     ) -> tuple[str, int, int]:
         """Invoke Azure OpenAI with a prompt"""
 
@@ -40,11 +41,15 @@ class AzureOpenAIClient(BaseLLMClient):
         temperature = config.get("temperature", 0.7)
 
         try:
+            # Build messages array
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+
             response = self.client.chat.completions.create(
                 model=deployment,  # This is the deployment name in Azure
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
