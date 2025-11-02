@@ -118,10 +118,17 @@ def stop_competition(
 @router.get("/{competition_id}/history", response_model=MultiParticipantHistoryResponse)
 def get_competition_history(
     competition_id: UUID,
-    limit_per_participant: int = 500,
+    limit_per_participant: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    """Get portfolio history for all participants in a competition (for multi-trader equity chart)"""
+    """Get portfolio history for all participants in a competition (for multi-trader equity chart)
+
+    Args:
+        competition_id: UUID of the competition
+        limit_per_participant: Optional limit on number of records per participant.
+                              If provided, returns the most recent N records.
+                              If not provided, returns all history.
+    """
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
 
     if not competition:
@@ -137,13 +144,24 @@ def get_competition_history(
     # Get history for each participant
     participants_history = []
     for participant in participants:
-        history = (
+        query = (
             db.query(PortfolioHistory)
             .filter(PortfolioHistory.participant_id == participant.id)
-            .order_by(PortfolioHistory.recorded_at.asc())
-            .limit(limit_per_participant)
-            .all()
         )
+
+        if limit_per_participant:
+            # If limit is specified, get most recent N records by ordering DESC, limiting, then reversing
+            history = (
+                query
+                .order_by(PortfolioHistory.recorded_at.desc())
+                .limit(limit_per_participant)
+                .all()
+            )
+            # Reverse to get chronological order (oldest to newest)
+            history.reverse()
+        else:
+            # No limit - fetch all records in chronological order
+            history = query.order_by(PortfolioHistory.recorded_at.asc()).all()
 
         participants_history.append({
             "participant_id": participant.id,
