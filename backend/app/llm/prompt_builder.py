@@ -69,6 +69,7 @@ class PromptBuilder:
 
         positions_data = [
             {
+                "position_id": str(p.id),  # UUID needed for closing positions
                 "symbol": p.symbol,
                 "asset_class": p.asset_class,
                 "side": p.side,
@@ -101,13 +102,8 @@ class PromptBuilder:
     def _build_trading_rules(self, competition: Competition, portfolio: Portfolio) -> Dict[str, Any]:
         """Build trading rules section"""
 
-        # Calculate maximum position size in dollars
-        max_position_size_dollars = float(portfolio.equity * competition.max_position_size_pct / 100)
-
         return {
             "max_leverage": float(competition.max_leverage),
-            "max_position_size_pct": float(competition.max_position_size_pct),
-            "max_position_size_dollars": max_position_size_dollars,
             "margin_requirement_pct": float(competition.margin_requirement_pct),
             "allowed_asset_classes": competition.allowed_asset_classes,
             "market_hours_only": competition.market_hours_only,
@@ -145,6 +141,7 @@ Your portfolio contains these key metrics:
 
 Each open position contains:
 
+- **position_id**: UUID identifier for this position (REQUIRED for closing)
 - **symbol**: Trading pair (e.g., "BTCUSDT")
 - **side**: "long" (buy) or "short" (sell)
 - **quantity**: Amount of the asset
@@ -177,44 +174,17 @@ You may:
 
 IMPORTANT: This competition requires MINIMUM 5x leverage on all new positions.
 - Using leverage below 5x may result in order rejection
-- Recommended leverage range: 5-10x
+- Recommended leverage range: 5-40x (up to the max_leverage limit)
 - Higher leverage amplifies both gains and losses
 - This is an aggressive trading competition that rewards bold positioning
 
-CRITICAL - POSITION SIZING RULES:
-The system validates that (quantity × current_price) ≤ max_position_size_dollars
+## POSITION SIZING
 
-1. NOTIONAL VALUE LIMIT (enforced by system):
-   - max_position_size_dollars is the maximum NOTIONAL VALUE per position
-   - Notional value = quantity × current_price
-   - This limit applies REGARDLESS of leverage
-   - Example: If max is $5000 and BTC is $100,000, max quantity = 5000/100000 = 0.05 BTC
-
-2. LEVERAGE DOES NOT AFFECT POSITION SIZE LIMITS:
-   - Leverage only affects margin required: margin = notional_value / leverage
-   - Higher leverage = lower margin required, but same notional value limit
-   - Example: $5000 notional with 2x leverage requires $2500 margin
-   - Example: $5000 notional with 1x leverage requires $5000 margin
-
-3. CALCULATION FORMULA (use this):
-   - max_quantity = max_position_size_dollars / current_price
-   - Always calculate: notional_value = quantity × current_price
-   - Verify: notional_value ≤ max_position_size_dollars
-   - Add safety buffer: use 98% of max to account for price slippage
-
-4. WORKED EXAMPLE:
-   - Given: max_position_size_dollars = $5000, BTC price = $100,000
-   - Max quantity = 5000 / 100000 = 0.05 BTC
-   - Safe quantity (98%) = 0.05 × 0.98 = 0.049 BTC
-   - Notional value check: 0.049 × 100000 = $4900 ✓ (under $5000 limit)
-   - At 2x leverage: margin required = 4900 / 2 = $2450
-   - At 3x leverage: margin required = 4900 / 3 = $1633
-
-COMMON MISTAKES TO AVOID:
-❌ DO NOT: Calculate quantity as (max_position_size × leverage) / price
-✓ DO: Calculate quantity as max_position_size / price
-❌ DO NOT: Assume leverage increases position size limit
-✓ DO: Understand leverage only reduces margin requirement
+Position size is only constrained by available margin. The key calculation:
+- **margin_required** = (quantity × current_price) / leverage
+- You can open any position as long as **margin_required ≤ margin_available**
+- Leverage reduces the margin needed: higher leverage = more positions with same capital
+- There are NO artificial position size limits - only margin availability constrains you
 
 Respond with valid JSON following this format:
 {
@@ -223,26 +193,39 @@ Respond with valid JSON following this format:
   "orders": [
     {
       "action": "open" or "close",
-      "symbol": "BTCUSDT",
-      "side": "buy" or "sell",
-      "quantity": 0.049,
-      "leverage": 2.0,
-      "position_id": "uuid" // Only for close action
+      "symbol": "BTCUSDT",           // Required for all actions
+      "side": "buy" or "sell",       // Required for open, optional for close
+      "quantity": 0.1,                // Required for open, optional for close
+      "leverage": 10.0,               // Required for open, optional for close
+      "position_id": "uuid"           // Required for close action (use position_id from your positions list)
     }
   ]
 }
 
-Example - Opening position (max_position_size_dollars = $5000, BTC = $100,000):
+Example - Opening position:
 {
   "decision": "trade",
-  "reasoning": "BTC momentum strong. Opening conservative long position within limits.",
+  "reasoning": "BTC showing strong bullish momentum. Opening leveraged long position.",
   "orders": [
     {
       "action": "open",
       "symbol": "BTCUSDT",
       "side": "buy",
-      "quantity": 0.049,
-      "leverage": 2.0
+      "quantity": 0.1,
+      "leverage": 10.0
+    }
+  ]
+}
+
+Example - Closing position:
+{
+  "decision": "trade",
+  "reasoning": "Taking profit on ETH position. Up 5% and showing signs of reversal.",
+  "orders": [
+    {
+      "action": "close",
+      "symbol": "ETHUSDT",
+      "position_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     }
   ]
 }

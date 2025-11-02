@@ -60,11 +60,6 @@ class TradingEngine:
             if margin_required > portfolio.margin_available:
                 return False, f"Insufficient margin. Required: {margin_required}, Available: {portfolio.margin_available}"
 
-            # Check position size limit
-            max_position_size = (competition.max_position_size_pct / Decimal("100")) * portfolio.equity
-            if notional_value > max_position_size:
-                return False, f"Position size {notional_value} exceeds max {max_position_size}"
-
         # For closing/modifying positions, check position exists
         elif action in ["close", "increase", "decrease"]:
             if position_id is None:
@@ -82,7 +77,8 @@ class TradingEngine:
     def execute_order(
         self,
         order: Order,
-        action: str
+        action: str,
+        position_id: Optional[UUID] = None
     ) -> Optional[Trade]:
         """Execute an order and create a trade"""
 
@@ -105,7 +101,7 @@ class TradingEngine:
         if action == "open":
             return self._execute_open(order, participant, portfolio, competition, execution_price)
         elif action == "close":
-            return self._execute_close(order, participant, portfolio, execution_price)
+            return self._execute_close(order, participant, portfolio, execution_price, position_id)
         else:
             order.status = "rejected"
             order.rejection_reason = f"Action {action} not yet implemented"
@@ -178,15 +174,20 @@ class TradingEngine:
         order: Order,
         participant: Participant,
         portfolio: Portfolio,
-        price: Decimal
+        price: Decimal,
+        position_id: Optional[UUID] = None
     ) -> Trade:
         """Execute closing a position"""
 
-        # Find the position (should be validated already)
-        position = self.db.query(Position).filter(
-            Position.participant_id == participant.id,
-            Position.symbol == order.symbol
-        ).first()
+        # Find the position - use position_id if provided (preferred), otherwise fall back to symbol
+        if position_id:
+            position = self.db.query(Position).filter(Position.id == position_id).first()
+        else:
+            # Fallback: Find by symbol (less reliable if multiple positions exist)
+            position = self.db.query(Position).filter(
+                Position.participant_id == participant.id,
+                Position.symbol == order.symbol
+            ).first()
 
         if not position:
             order.status = "rejected"

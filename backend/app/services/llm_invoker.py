@@ -233,8 +233,8 @@ class LLMInvoker:
                 position = self.db.query(Position).filter(Position.id == position_id).first()
                 if position:
                     if side is None:
-                        # For closing, the side is opposite of the position direction
-                        side = "sell" if position.direction == "long" else "buy"
+                        # For closing, the side is opposite of the position side
+                        side = "sell" if position.side == "long" else "buy"
                     if quantity is None:
                         quantity = float(position.quantity)
 
@@ -305,7 +305,7 @@ class LLMInvoker:
             # Execute if valid
             execution_status = "rejected"
             if is_valid:
-                self.trading_engine.execute_order(order, order_decision.action)
+                self.trading_engine.execute_order(order, order_decision.action, position_id)
                 # Refresh to get updated status
                 self.db.refresh(order)
                 execution_status = order.status
