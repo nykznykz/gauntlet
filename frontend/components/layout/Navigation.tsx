@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Activity, Trophy, Settings } from 'lucide-react';
+import Image from 'next/image';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -19,9 +20,15 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">G</span>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="relative w-10 h-10">
+                <Image
+                  src="/gauntlet-logo.jpg"
+                  alt="Gauntlet"
+                  fill
+                  className="object-contain rounded-lg"
+                  priority
+                />
               </div>
               <span className="text-xl font-bold text-foreground">Gauntlet</span>
             </Link>
