@@ -15,7 +15,7 @@ export function LeaderboardTable() {
     queryFn: async () => {
       if (!selectedCompetitionId) return null;
       const response = await leaderboardApi.get(selectedCompetitionId);
-      return response.data;
+      return response.data.leaderboard;
     },
     enabled: !!selectedCompetitionId,
     refetchInterval: 10000,

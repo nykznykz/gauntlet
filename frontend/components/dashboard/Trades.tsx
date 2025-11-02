@@ -16,7 +16,7 @@ export function Trades() {
     queryFn: async () => {
       if (!selectedParticipantId) return null;
       const response = await tradeApi.list(selectedParticipantId, 20);
-      return response.data;
+      return response.data.trades;
     },
     enabled: !!selectedParticipantId,
     refetchInterval: 5000,

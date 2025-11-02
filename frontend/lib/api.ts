@@ -1,10 +1,12 @@
 import { Competition, Participant, Portfolio, Position, Trade, MultiParticipantHistory, LeaderboardEntry, LLMInvocationList } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BUILD_VERSION = '2025-11-02T06:13:00Z'; // Cache-busting constant
 
 export interface ApiResponse<T> {
   data: T;
   error?: string;
+  _v?: string; // Build version for cache busting
 }
 
 class ApiClient {
@@ -93,13 +95,13 @@ export const portfolioApi = {
 // Position APIs
 export const positionApi = {
   list: (participantId: string) =>
-    apiClient.get<Position[]>(`/api/v1/participants/${participantId}/positions`),
+    apiClient.get<{ positions: Position[] }>(`/api/v1/participants/${participantId}/positions`),
 };
 
 // Trade APIs
 export const tradeApi = {
   list: (participantId: string, limit?: number) =>
-    apiClient.get<Trade[]>(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
+    apiClient.get<{ trades: Trade[] }>(`/api/v1/participants/${participantId}/trades?limit=${limit || 50}`),
 };
 
 // Market Data APIs
@@ -112,7 +114,7 @@ export const marketDataApi = {
 // Leaderboard API
 export const leaderboardApi = {
   get: (competitionId: string) =>
-    apiClient.get<LeaderboardEntry[]>(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
+    apiClient.get<{ leaderboard: LeaderboardEntry[] }>(`/api/v1/leaderboard/competitions/${competitionId}/leaderboard`),
 };
 
 // Invocation APIs
