@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import type { Configuration } from 'webpack';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -22,6 +23,15 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+  // Force all chunks to have unique hashes to bust Railway CDN cache
+  webpack: (config: Configuration, { isServer }) => {
+    if (!isServer && config.output) {
+      const timestamp = Date.now();
+      config.output.filename = `static/chunks/[name]-${timestamp}.js`;
+      config.output.chunkFilename = `static/chunks/[name]-${timestamp}.js`;
+    }
+    return config;
   },
 };
 
