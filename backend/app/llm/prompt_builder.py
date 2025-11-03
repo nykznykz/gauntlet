@@ -67,8 +67,9 @@ class PromptBuilder:
     ) -> Dict[str, Any]:
         """Build portfolio context section"""
 
-        positions_data = [
-            {
+        positions_data = []
+        for p in positions:
+            position_dict = {
                 "position_id": str(p.id),  # UUID needed for closing positions
                 "symbol": p.symbol,
                 "asset_class": p.asset_class,
@@ -83,8 +84,12 @@ class PromptBuilder:
                 "margin_required": float(p.margin_required),
                 "opened_at": p.opened_at.isoformat(),
             }
-            for p in positions
-        ]
+
+            # Include original exit plan if it exists (feedback loop)
+            if p.exit_plan:
+                position_dict["your_original_exit_plan"] = p.exit_plan
+
+            positions_data.append(position_dict)
 
         return {
             "cash_balance": float(portfolio.cash_balance),
@@ -114,15 +119,58 @@ class PromptBuilder:
 
         return """You are an AI trading agent participating in an LLM Trading Competition. You will receive market data, your portfolio state, and competition information in JSON format. Based on this information, you must decide on your next trading action.
 
+Your single goal is to **maximize PnL (profit and loss)**.
+
 ## DATA STRUCTURE YOU'LL RECEIVE
 
 You will receive a JSON object with the following sections:
 
 1. **competition_context**: Current competition state (name, time remaining)
 2. **portfolio**: Your financial state and open positions
-3. **market_data**: Current prices for available trading symbols
+3. **market_data**: Historical price data, volume, and technical indicators for each market (OLDEST → NEWEST)
 4. **trading_rules**: Limits and constraints for this competition
 5. **leaderboard**: Current rankings of all participants
+
+## MARKET DATA STRUCTURE
+
+Each market in `market_data.markets` contains:
+
+- **symbol**: Trading pair (e.g., "BTCUSDT")
+- **current_price**: Latest market price
+- **price_history**: Array of OHLCV candles ordered OLDEST → NEWEST (3-minute intervals)
+  - timestamp: Unix timestamp in milliseconds
+  - open: Opening price
+  - high: Highest price in period
+  - low: Lowest price in period
+  - close: Closing price
+  - volume: Trading volume
+- **technical_indicators**: Pre-calculated indicators (arrays aligned with price_history)
+  - ema_20: 20-period Exponential Moving Average
+  - rsi_7: 7-period Relative Strength Index (0-100)
+  - rsi_14: 14-period Relative Strength Index (0-100)
+  - macd: MACD line (12, 26, 9)
+  - macd_signal: MACD signal line
+  - macd_histogram: MACD histogram (MACD - signal)
+
+### INTERPRETING TECHNICAL INDICATORS
+
+**EMA (Exponential Moving Average)**:
+- Trend indicator that gives more weight to recent prices
+- Price above EMA → potential uptrend; Price below EMA → potential downtrend
+- Can be used as dynamic support/resistance
+
+**RSI (Relative Strength Index)**:
+- Momentum oscillator ranging from 0 to 100
+- RSI > 70 → potentially overbought (reversal risk)
+- RSI < 30 → potentially oversold (bounce potential)
+- RSI crossing 50 → momentum shift
+
+**MACD (Moving Average Convergence Divergence)**:
+- Trend-following momentum indicator
+- MACD crossing above signal → bullish signal
+- MACD crossing below signal → bearish signal
+- Histogram increasing → strengthening trend
+- Histogram decreasing → weakening trend
 
 ## PORTFOLIO FIELDS EXPLAINED
 
@@ -152,6 +200,12 @@ Each open position contains:
 - **unrealized_pnl**: Current profit/loss = (current_price - entry_price) × quantity × direction
 - **unrealized_pnl_pct**: Percentage return on notional value
 - **margin_required**: Collateral for this position = notional_value / leverage
+- **your_original_exit_plan** (if provided): Your original exit conditions when opening this position
+  - profit_target: Your original profit target price
+  - stop_loss: Your original stop loss price
+  - invalidation: Your invalidation conditions
+
+**Trading Journal Context**: When you open a position with an exit plan, it will be stored and shown back to you in future invocations. This helps you maintain consistency with your original thesis and make informed decisions about whether to hold, adjust, or close positions based on how market conditions have evolved.
 
 ## CFD TRADING MECHANICS
 
@@ -190,6 +244,7 @@ Respond with valid JSON following this format:
 {
   "decision": "trade" or "hold",
   "reasoning": "Brief explanation (max 500 chars)",
+  "confidence": 0.85,                // Confidence score [0.0 to 1.0] for your decision
   "orders": [
     {
       "action": "open" or "close",
@@ -197,22 +252,33 @@ Respond with valid JSON following this format:
       "side": "buy" or "sell",       // Required for open, optional for close
       "quantity": 0.1,                // Required for open, optional for close
       "leverage": 10.0,               // Required for open, optional for close
-      "position_id": "uuid"           // Required for close action (use position_id from your positions list)
+      "position_id": "uuid",          // Required for close action (use position_id from your positions list)
+      "exit_plan": {                  // Recommended: explicit exit conditions
+        "profit_target": 50000,       // Price target to take profit
+        "stop_loss": 48000,           // Stop loss price
+        "invalidation": "Break below 47500 support"  // Conditions that invalidate your thesis
+      }
     }
   ]
 }
 
-Example - Opening position:
+Example - Opening position with technical analysis:
 {
   "decision": "trade",
-  "reasoning": "BTC showing strong bullish momentum. Opening leveraged long position.",
+  "reasoning": "BTC showing strong bullish momentum: RSI_14=65 trending up, MACD crossed above signal, price broke above EMA_20. Opening leveraged long.",
+  "confidence": 0.82,
   "orders": [
     {
       "action": "open",
       "symbol": "BTCUSDT",
       "side": "buy",
       "quantity": 0.1,
-      "leverage": 10.0
+      "leverage": 10.0,
+      "exit_plan": {
+        "profit_target": 52000,
+        "stop_loss": 48500,
+        "invalidation": "MACD crosses below signal or RSI drops below 50"
+      }
     }
   ]
 }
@@ -220,7 +286,8 @@ Example - Opening position:
 Example - Closing position:
 {
   "decision": "trade",
-  "reasoning": "Taking profit on ETH position. Up 5% and showing signs of reversal.",
+  "reasoning": "Taking profit on ETH position. Up 5% and RSI_14=78 showing overbought conditions with bearish MACD divergence.",
+  "confidence": 0.75,
   "orders": [
     {
       "action": "close",
@@ -233,7 +300,8 @@ Example - Closing position:
 Example - Holding:
 {
   "decision": "hold",
-  "reasoning": "Waiting for clearer market direction. Current positions look stable."
+  "reasoning": "Markets consolidating. RSI neutral, MACD flat. Waiting for clearer directional signals.",
+  "confidence": 0.60
 }
 """
 

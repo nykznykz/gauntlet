@@ -305,7 +305,12 @@ class LLMInvoker:
             # Execute if valid
             execution_status = "rejected"
             if is_valid:
-                self.trading_engine.execute_order(order, order_decision.action, position_id)
+                # Extract exit_plan if provided
+                exit_plan_dict = None
+                if order_decision.exit_plan:
+                    exit_plan_dict = order_decision.exit_plan.model_dump(exclude_none=True)
+
+                self.trading_engine.execute_order(order, order_decision.action, position_id, exit_plan_dict)
                 # Refresh to get updated status
                 self.db.refresh(order)
                 execution_status = order.status
@@ -326,19 +331,19 @@ class LLMInvoker:
         return execution_results
 
     def _fetch_market_data(self, symbols: List[str]) -> dict:
-        """Fetch market data for symbols"""
-        prices = market_data_service.get_multiple_prices(symbols, "crypto")
+        """Fetch enhanced market data with price history and technical indicators"""
+        # Fetch enhanced market data (similar to nof1.ai approach)
+        # Includes: historical prices, volume, technical indicators (EMA, MACD, RSI)
+        enhanced_data = market_data_service.get_enhanced_market_data(
+            symbols=symbols,
+            asset_class="crypto",
+            timeframe="3m",  # 3-minute intervals like nof1.ai
+            limit=100  # Last 100 candles (5 hours of 3-min data)
+        )
 
         market_data = {
             "available_symbols": symbols,
-            "prices": [
-                {
-                    "symbol": symbol,
-                    "asset_class": "crypto",
-                    "current_price": float(price) if price else None,
-                }
-                for symbol, price in prices.items()
-            ]
+            "markets": enhanced_data  # Each market has: symbol, current_price, price_history, technical_indicators
         }
 
         return market_data

@@ -1,6 +1,6 @@
 """Position model"""
 from sqlalchemy import Column, String, Numeric, TIMESTAMP, ForeignKey, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
@@ -33,6 +33,9 @@ class Position(Base):
     # P&L
     unrealized_pnl = Column(Numeric(20, 2), nullable=False)
     unrealized_pnl_pct = Column(Numeric(10, 4), nullable=False)
+
+    # LLM Strategy Context
+    exit_plan = Column(JSON, nullable=True)  # Stores LLM's original exit plan: {profit_target, stop_loss, invalidation}
 
     # Timestamps
     opened_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

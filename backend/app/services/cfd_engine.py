@@ -112,6 +112,7 @@ class CFDEngine:
         quantity: Decimal,
         entry_price: Decimal,
         leverage: Decimal,
+        exit_plan: dict = None,
     ) -> Position:
         """Open a new CFD position"""
         metrics = self.calculate_position_metrics(
@@ -136,6 +137,7 @@ class CFDEngine:
             notional_value=metrics["notional_value"],
             unrealized_pnl=Decimal("0"),
             unrealized_pnl_pct=Decimal("0"),
+            exit_plan=exit_plan,  # Store LLM's exit plan
         )
 
         self.db.add(position)

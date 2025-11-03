@@ -78,7 +78,8 @@ class TradingEngine:
         self,
         order: Order,
         action: str,
-        position_id: Optional[UUID] = None
+        position_id: Optional[UUID] = None,
+        exit_plan: Optional[dict] = None
     ) -> Optional[Trade]:
         """Execute an order and create a trade"""
 
@@ -99,7 +100,7 @@ class TradingEngine:
 
         # Execute based on action
         if action == "open":
-            return self._execute_open(order, participant, portfolio, competition, execution_price)
+            return self._execute_open(order, participant, portfolio, competition, execution_price, exit_plan)
         elif action == "close":
             return self._execute_close(order, participant, portfolio, execution_price, position_id)
         else:
@@ -115,7 +116,8 @@ class TradingEngine:
         participant: Participant,
         portfolio: Portfolio,
         competition: Competition,
-        price: Decimal
+        price: Decimal,
+        exit_plan: Optional[dict] = None
     ) -> Trade:
         """Execute opening a new position"""
 
@@ -129,7 +131,7 @@ class TradingEngine:
         # Allocate margin
         self.portfolio_manager.allocate_margin(portfolio, margin_required)
 
-        # Open position
+        # Open position with exit plan
         position = self.cfd_engine.open_position(
             portfolio=portfolio,
             symbol=order.symbol,
@@ -138,6 +140,7 @@ class TradingEngine:
             quantity=order.quantity,
             entry_price=price,
             leverage=order.leverage,
+            exit_plan=exit_plan,
         )
 
         # Create trade record
