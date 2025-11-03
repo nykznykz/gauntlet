@@ -164,3 +164,95 @@ class PortfolioManager:
         self.db.refresh(participant)
 
         return participant
+
+    def check_and_liquidate(
+        self,
+        participant: Participant,
+        portfolio: Portfolio,
+        competition: "Competition"
+    ) -> bool:
+        """
+        Check if participant should be liquidated and liquidate if necessary.
+
+        Returns:
+            True if participant was liquidated, False otherwise
+        """
+        from app.utils.calculations import check_liquidation
+
+        # Skip if already liquidated or not active
+        if participant.status != "active":
+            return False
+
+        # Skip check if no margin used (no positions)
+        if portfolio.margin_used <= 0:
+            return False
+
+        # Calculate margin level
+        if portfolio.margin_used > 0:
+            margin_level = (portfolio.equity / portfolio.margin_used) * Decimal("100")
+        else:
+            return False
+
+        # Calculate liquidation threshold
+        initial_margin_pct = Decimal("100") / competition.max_leverage
+        should_liquidate = check_liquidation(
+            margin_level,
+            competition.maintenance_margin_pct,
+            initial_margin_pct
+        )
+
+        if not should_liquidate:
+            return False
+
+        # Liquidate all positions
+        positions = list(
+            self.db.execute(
+                select(Position).where(Position.portfolio_id == portfolio.id)
+            )
+            .scalars()
+            .all()
+        )
+
+        if not positions:
+            return False
+
+        # Import here to avoid circular dependency
+        from app.services.cfd_engine import CFDEngine
+        from app.services.market_data_service import market_data_service
+
+        cfd_engine = CFDEngine(self.db)
+        total_realized_pnl = Decimal("0")
+        total_margin_released = Decimal("0")
+
+        # Close all positions
+        for position in positions:
+            try:
+                # Get current price
+                current_price = market_data_service.get_price(position.symbol, position.asset_class)
+                if not current_price:
+                    continue
+
+                # Close position
+                close_result = cfd_engine.close_position(position, current_price)
+                total_realized_pnl += close_result["realized_pnl"]
+                total_margin_released += close_result["margin_released"]
+
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error closing position {position.id} during liquidation: {e}")
+
+        # Update portfolio with realized P&L
+        portfolio.cash_balance += total_realized_pnl
+        portfolio.realized_pnl += total_realized_pnl
+        self.db.add(portfolio)
+
+        # Update portfolio metrics (will recalculate margin_used from remaining positions)
+        self.update_portfolio(portfolio)
+
+        # Mark participant as liquidated
+        participant.status = "liquidated"
+        self.db.add(participant)
+        self.db.commit()
+
+        return True

@@ -120,6 +120,7 @@ class SchedulerService:
                     logger.warning(f"No price available for {position.symbol}")
 
             # Update all affected portfolios and participant equity
+            liquidated_count = 0
             for portfolio_id in portfolios_to_update:
                 try:
                     from app.models.portfolio import Portfolio
@@ -130,10 +131,18 @@ class SchedulerService:
                         participant = db.query(Participant).filter(Participant.id == portfolio.participant_id).first()
                         if participant:
                             portfolio_manager.update_participant_equity(participant, portfolio.equity)
+
+                            # Check for liquidation
+                            competition = db.query(Competition).filter(Competition.id == participant.competition_id).first()
+                            if competition:
+                                was_liquidated = portfolio_manager.check_and_liquidate(participant, portfolio, competition)
+                                if was_liquidated:
+                                    liquidated_count += 1
+                                    logger.warning(f"⚠️ Participant {participant.name} ({participant.id}) has been LIQUIDATED")
                 except Exception as e:
                     logger.error(f"Error updating portfolio {portfolio_id}: {e}")
 
-            logger.info(f"Price update complete: Updated {updated_count} positions across {len(portfolios_to_update)} portfolios")
+            logger.info(f"Price update complete: Updated {updated_count} positions across {len(portfolios_to_update)} portfolios, {liquidated_count} participant(s) liquidated")
 
         except Exception as e:
             logger.error(f"Error in price update task: {e}", exc_info=True)
