@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # Qwen Configuration
     QWEN_API_KEY: str = ""
     QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/api/v1"
-    QWEN_MODEL: str = "qwen-max"
+    QWEN_MODEL: str = "qwen-max"  # qwen-max = Qwen 3 Max, qwen-max-latest, qwen-turbo, qwen-plus
 
     BINANCE_API_KEY: str = ""
     BINANCE_API_SECRET: str = ""

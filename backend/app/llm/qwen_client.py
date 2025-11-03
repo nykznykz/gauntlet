@@ -6,7 +6,15 @@ from app.config import settings
 
 
 class QwenClient(BaseLLMClient):
-    """Client for Qwen AI API (OpenAI-compatible)"""
+    """
+    Client for Qwen AI API (OpenAI-compatible)
+
+    Supported models on DashScope:
+    - qwen-max: Latest Qwen Max (currently Qwen 3 Max)
+    - qwen-max-latest: Explicitly latest Qwen Max
+    - qwen-turbo: Fast model
+    - qwen-plus: Balanced model
+    """
 
     def __init__(
         self,
