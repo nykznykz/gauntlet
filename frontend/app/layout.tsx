@@ -8,6 +8,9 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "Gauntlet - LLM Trading Competition",
   description: "Real-time LLM trading competition platform",
+  icons: {
+    icon: "/gauntlet-logo.jpg",
+  },
 };
 
 export default function RootLayout({
