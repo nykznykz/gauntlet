@@ -51,42 +51,69 @@ class MarketDataService:
         symbols: List[str],
         asset_class: str = "crypto",
         timeframe: str = "3m",
-        limit: int = 100
+        limit: int = 20
     ) -> List[Dict[str, Any]]:
         """
-        Get enhanced market data with price history, volume, and technical indicators
+        Get enhanced market data with multi-timeframe price history and technical indicators
 
-        Similar to nof1.ai approach: provides historical data (oldest → newest) with
-        technical indicators (EMA, MACD, RSI) calculated on the fly.
+        Provides data across multiple timeframes for better context:
+        - 1m: Very short-term (last 10 minutes)
+        - 5m: Short-term (last 50 minutes)
+        - 15m: Medium-term (last 2.5 hours)
+        - 1h: Longer-term (last 10 hours)
 
         Args:
             symbols: List of trading symbols
             asset_class: Asset class (default: "crypto")
-            timeframe: Candlestick timeframe (default: "3m" for 3-minute intervals)
-            limit: Number of historical candles to fetch (default: 100)
+            timeframe: Ignored - uses multiple timeframes
+            limit: Ignored - uses fixed limits per timeframe
 
         Returns:
-            List of market data dictionaries for each symbol with price history and indicators
+            List of market data dictionaries for each symbol with multi-timeframe data
         """
         if asset_class != "crypto":
             raise NotImplementedError(f"Asset class {asset_class} not yet supported")
 
         enhanced_data = []
 
+        # Define timeframes with their limits
+        # Fetch enough data for indicators (50 candles for MACD) but only show last 5 in price_history
+        timeframes = [
+            ("1m", 50),   # Fetch 50, show last 5 (~5 minutes shown)
+            ("5m", 50),   # Fetch 50, show last 5 (~25 minutes shown)
+            ("15m", 50),  # Fetch 50, show last 5 (~1.25 hours shown)
+            ("1h", 50),   # Fetch 50, show last 5 (~5 hours shown)
+        ]
+
         for symbol in symbols:
             # Fetch current price
             current_price = self.binance.get_current_price(symbol)
             current_price_float = float(current_price) if current_price else None
 
-            # Fetch historical OHLCV data
-            ohlcv_data = self.binance.get_ohlcv(symbol, timeframe, limit)
+            # Fetch data for each timeframe
+            timeframe_data = {}
+            for tf, tf_limit in timeframes:
+                ohlcv_data = self.binance.get_ohlcv(symbol, tf, tf_limit)
 
-            # Calculate technical indicators and format data
-            market_data = technical_indicator_service.format_market_data_with_indicators(
-                symbol=symbol,
-                ohlcv_data=ohlcv_data,
-                current_price=current_price_float
-            )
+                # Calculate technical indicators for this timeframe
+                tf_formatted = technical_indicator_service.format_market_data_with_indicators(
+                    symbol=symbol,
+                    ohlcv_data=ohlcv_data,
+                    current_price=current_price_float
+                )
+
+                # Store under timeframe key
+                timeframe_data[tf] = {
+                    'price_history': tf_formatted['price_history'],
+                    'technical_indicators': tf_formatted['technical_indicators']
+                }
+
+            # Combine into single market data structure
+            market_data = {
+                'symbol': symbol,
+                'current_price': current_price_float,
+                'timeframes': timeframe_data  # Multi-timeframe data
+            }
 
             enhanced_data.append(market_data)
 

@@ -95,7 +95,9 @@ class TechnicalIndicatorService:
         """
         indicators = self.calculate_indicators(ohlcv_data)
 
-        # Extract price and volume history
+        # Extract price and volume history - only last 5 candles for compactness
+        recent_candles = ohlcv_data[-5:] if len(ohlcv_data) > 5 else ohlcv_data
+
         price_history = [
             {
                 'timestamp': candle['timestamp'],
@@ -105,7 +107,7 @@ class TechnicalIndicatorService:
                 'close': float(candle['close']) if isinstance(candle['close'], Decimal) else candle['close'],
                 'volume': float(candle['volume']) if isinstance(candle['volume'], Decimal) else candle['volume'],
             }
-            for candle in ohlcv_data
+            for candle in recent_candles
         ]
 
         # Use last close price if current_price not provided
@@ -113,18 +115,22 @@ class TechnicalIndicatorService:
             price_history[-1]['close'] if price_history else None
         )
 
+        # Compact indicators: only include latest value (current state)
+        compact_indicators = {}
+        for key in ['ema_20', 'rsi_7', 'rsi_14', 'macd', 'macd_signal', 'macd_histogram']:
+            values = indicators.get(key, [])
+            if values and len(values) > 0:
+                # Get the last non-zero/non-null value
+                latest = values[-1] if values[-1] is not None else None
+                compact_indicators[key] = latest
+            else:
+                compact_indicators[key] = None
+
         return {
             'symbol': symbol,
             'current_price': last_price,
-            'price_history': price_history,  # Oldest → Newest
-            'technical_indicators': {
-                'ema_20': indicators['ema_20'],
-                'rsi_7': indicators['rsi_7'],
-                'rsi_14': indicators['rsi_14'],
-                'macd': indicators['macd'],
-                'macd_signal': indicators['macd_signal'],
-                'macd_histogram': indicators['macd_histogram'],
-            }
+            'price_history': price_history,  # Last 5 candles only
+            'technical_indicators': compact_indicators  # Just the latest value of each indicator
         }
 
 

@@ -127,11 +127,11 @@ PARTICIPANTS_CONFIG = [
         }
     },
     {
-        "name": "gpt4o-mini",
-        "llm_provider": "azure_openai",
-        "llm_model": "gpt-4o-mini",
+        "name": "qwen-3-max",
+        "llm_provider": "qwen",
+        "llm_model": "qwen-max",
         "llm_config": {
-            "model": "gpt-4o-mini",
+            "model": "qwen-max",
             "temperature": 0.7,
             "max_tokens": 2000,
         }

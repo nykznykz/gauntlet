@@ -171,9 +171,10 @@ class LLMInvoker:
 
         # Strategy 1: Extract JSON from markdown code blocks (```json or ```)
         if "```" in response_text:
-            # Find all code blocks
+            # Find all code blocks - more flexible pattern to handle various formats
             # Match ```json or ``` followed by content and closing ```
-            code_block_pattern = r'```(?:json)?\s*\n(.*?)\n```'
+            # Allow optional whitespace/newlines around content
+            code_block_pattern = r'```(?:json)?\s*(.*?)```'
             matches = re.findall(code_block_pattern, response_text, re.DOTALL)
 
             if matches:
@@ -339,7 +340,7 @@ class LLMInvoker:
             symbols=symbols,
             asset_class="crypto",
             timeframe="3m",  # 3-minute intervals like nof1.ai
-            limit=100  # Last 100 candles (5 hours of 3-min data)
+            limit=20  # Last 20 candles (1 hour of 3-min data) - reduced to stay within token limits
         )
 
         market_data = {

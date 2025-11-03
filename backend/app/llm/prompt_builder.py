@@ -137,20 +137,22 @@ Each market in `market_data.markets` contains:
 
 - **symbol**: Trading pair (e.g., "BTCUSDT")
 - **current_price**: Latest market price
-- **price_history**: Array of OHLCV candles ordered OLDEST → NEWEST (3-minute intervals)
-  - timestamp: Unix timestamp in milliseconds
-  - open: Opening price
-  - high: Highest price in period
-  - low: Lowest price in period
-  - close: Closing price
-  - volume: Trading volume
-- **technical_indicators**: Pre-calculated indicators (arrays aligned with price_history)
-  - ema_20: 20-period Exponential Moving Average
-  - rsi_7: 7-period Relative Strength Index (0-100)
-  - rsi_14: 14-period Relative Strength Index (0-100)
-  - macd: MACD line (12, 26, 9)
-  - macd_signal: MACD signal line
-  - macd_histogram: MACD histogram (MACD - signal)
+- **timeframes**: Multi-timeframe data for better context
+  - **1m**: Last 5 candles (~5 minutes)
+  - **5m**: Last 5 candles (~25 minutes)
+  - **15m**: Last 5 candles (~1.25 hours)
+  - **1h**: Last 5 candles (~5 hours)
+
+Each timeframe contains:
+- **price_history**: Last 5 OHLCV candles ordered OLDEST → NEWEST
+  - timestamp, open, high, low, close, volume
+- **technical_indicators**: Current (latest) values only
+  - ema_20: Current 20-period Exponential Moving Average
+  - rsi_7: Current 7-period RSI (0-100)
+  - rsi_14: Current 14-period RSI (0-100)
+  - macd: Current MACD line value
+  - macd_signal: Current MACD signal line
+  - macd_histogram: Current MACD histogram
 
 ### INTERPRETING TECHNICAL INDICATORS
 
