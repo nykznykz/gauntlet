@@ -61,11 +61,11 @@ PARTICIPANTS_CONFIG = [
         }
     },
     {
-        "name": "gpt4o",
+        "name": "gpt-4.1",
         "llm_provider": "azure_openai",
-        "llm_model": "gpt-4o",
+        "llm_model": "gpt-4.1",
         "llm_config": {
-            "model": "gpt-4o",  # Azure deployment name
+            "model": "gpt-4.1",  # Azure deployment name
             "temperature": 0.7,
             "max_tokens": 2000,
         }
