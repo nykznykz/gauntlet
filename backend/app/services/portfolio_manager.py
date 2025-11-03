@@ -122,12 +122,11 @@ class PortfolioManager:
         """Allocate margin for a new position (reserves margin without deducting from cash)"""
         # Model 1: Reserve margin - cash stays in account, margin is reserved
         # Cash balance remains unchanged
-        portfolio.margin_used += margin_amount
+        # NOTE: Don't manually adjust margin_used here - update_portfolio will
+        # recalculate it from all positions
         # margin_available will be recalculated in update_portfolio as (equity - margin_used)
 
-        self.db.add(portfolio)
-        self.db.commit()
-
+        # No need to commit here, just let update_portfolio handle it
         return self.update_portfolio(portfolio)
 
     def release_margin(
@@ -139,7 +138,9 @@ class PortfolioManager:
         """Release margin from a closed position"""
         # Model 1: Margin was never deducted from cash, so only add realized P&L
         portfolio.cash_balance += realized_pnl
-        portfolio.margin_used -= margin_amount
+        # NOTE: Don't manually adjust margin_used here - update_portfolio will
+        # recalculate it from all remaining positions (the closed position has been deleted)
+        # This prevents double-subtraction of margin
         portfolio.realized_pnl += realized_pnl
 
         self.db.add(portfolio)
