@@ -16,7 +16,7 @@ from app.models.portfolio import Portfolio
 from app.models.position import Position
 from app.models.order import Order
 from app.models.llm_invocation import LLMInvocation
-from app.llm.anthropic_client import AnthropicClient
+from app.llm.aws_bedrock_client import AWSBedrockClient
 from app.llm.openai_client import OpenAIClient
 from app.llm.azure_openai_client import AzureOpenAIClient
 from app.llm.deepseek_client import DeepSeekClient
@@ -37,7 +37,8 @@ class LLMInvoker:
     def _get_llm_client(self, provider: str):
         """Get appropriate LLM client"""
         if provider == "anthropic":
-            return AnthropicClient()
+            # Use AWS Bedrock for Claude models
+            return AWSBedrockClient()
         elif provider == "openai":
             return OpenAIClient()
         elif provider == "azure_openai":

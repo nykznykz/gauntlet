@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
+    # AWS Bedrock Configuration
+    AWS_BEARER_TOKEN_BEDROCK: str = ""
+
     # Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: str = ""
     AZURE_OPENAI_ENDPOINT: str = ""
