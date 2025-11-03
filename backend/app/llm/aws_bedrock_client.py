@@ -1,31 +1,19 @@
 """AWS Bedrock client for Claude"""
-from anthropic import AnthropicBedrock
+import httpx
 from typing import Dict, Any, Optional
 from app.llm.base import BaseLLMClient
 from app.config import settings
 
 
 class AWSBedrockClient(BaseLLMClient):
-    """Client for AWS Bedrock (Claude via Bedrock)"""
+    """Client for AWS Bedrock (Claude via Bedrock) using bearer token"""
 
     def __init__(self, bearer_token: Optional[str] = None):
-        # AWS Bedrock authentication
-        # If bearer token is provided, use it as the access key
-        # Otherwise, boto3 will use the default credential chain (env vars, ~/.aws/credentials, etc.)
-        bearer_token = bearer_token or settings.AWS_BEARER_TOKEN_BEDROCK
+        self.bearer_token = bearer_token or settings.AWS_BEARER_TOKEN_BEDROCK
+        self.base_url = "https://bedrock-runtime.us-east-1.amazonaws.com"
 
-        if bearer_token:
-            # Use bearer token as AWS access key (for custom auth setups)
-            self.client = AnthropicBedrock(
-                aws_access_key=bearer_token,
-                aws_secret_key="",  # Empty secret for token-based auth
-                aws_region="us-east-1",  # Default region
-            )
-        else:
-            # Use default AWS credential chain (environment variables, ~/.aws/credentials, IAM roles)
-            self.client = AnthropicBedrock(
-                aws_region="us-east-1",
-            )
+        if not self.bearer_token:
+            raise ValueError("AWS_BEARER_TOKEN_BEDROCK is required for Bedrock authentication")
 
     def invoke(
         self,
@@ -33,7 +21,7 @@ class AWSBedrockClient(BaseLLMClient):
         config: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None
     ) -> tuple[str, int, int]:
-        """Invoke Claude via AWS Bedrock"""
+        """Invoke Claude via AWS Bedrock using bearer token"""
 
         config = config or {}
 
@@ -54,11 +42,12 @@ class AWSBedrockClient(BaseLLMClient):
 
         max_tokens = config.get("max_tokens", 4096)
         temperature = config.get("temperature", 0.7)
+        anthropic_version = "bedrock-2023-05-31"
 
         try:
-            # Build API call parameters
-            api_params = {
-                "model": bedrock_model,
+            # Build request body (Bedrock format)
+            request_body = {
+                "anthropic_version": anthropic_version,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "messages": [
@@ -68,15 +57,32 @@ class AWSBedrockClient(BaseLLMClient):
 
             # Add system prompt if provided
             if system_prompt:
-                api_params["system"] = system_prompt
+                request_body["system"] = system_prompt
 
-            response = self.client.messages.create(**api_params)
+            # Make HTTP request to Bedrock with bearer token
+            url = f"{self.base_url}/model/{bedrock_model}/invoke"
 
-            response_text = response.content[0].text
-            prompt_tokens = response.usage.input_tokens
-            response_tokens = response.usage.output_tokens
+            headers = {
+                "Authorization": f"Bearer {self.bearer_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
+
+            with httpx.Client(timeout=120.0) as client:
+                response = client.post(url, json=request_body, headers=headers)
+                response.raise_for_status()
+
+                result = response.json()
+
+            # Parse response
+            response_text = result["content"][0]["text"]
+            prompt_tokens = result["usage"]["input_tokens"]
+            response_tokens = result["usage"]["output_tokens"]
 
             return response_text, prompt_tokens, response_tokens
 
+        except httpx.HTTPStatusError as e:
+            error_detail = e.response.text if hasattr(e.response, 'text') else str(e)
+            raise Exception(f"AWS Bedrock API error: {e.response.status_code} - {error_detail}")
         except Exception as e:
             raise Exception(f"AWS Bedrock API error: {str(e)}")
