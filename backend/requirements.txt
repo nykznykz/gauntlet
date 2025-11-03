@@ -21,6 +21,7 @@ requests==2.32.5
 
 # LLM Clients
 anthropic==0.72.0
+boto3==1.35.93  # Required for AWS Bedrock
 openai==2.6.1
 httpx==0.28.1
 

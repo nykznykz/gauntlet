@@ -9,15 +9,23 @@ class AWSBedrockClient(BaseLLMClient):
     """Client for AWS Bedrock (Claude via Bedrock)"""
 
     def __init__(self, bearer_token: Optional[str] = None):
-        self.bearer_token = bearer_token or settings.AWS_BEARER_TOKEN_BEDROCK
+        # AWS Bedrock authentication
+        # If bearer token is provided, use it as the access key
+        # Otherwise, boto3 will use the default credential chain (env vars, ~/.aws/credentials, etc.)
+        bearer_token = bearer_token or settings.AWS_BEARER_TOKEN_BEDROCK
 
-        # Initialize Anthropic Bedrock client with bearer token
-        self.client = AnthropicBedrock(
-            # AWS Bedrock uses bearer token for authentication
-            aws_access_key=self.bearer_token,
-            aws_secret_key="",  # Not needed with bearer token
-            aws_region="us-east-1",  # Default region
-        )
+        if bearer_token:
+            # Use bearer token as AWS access key (for custom auth setups)
+            self.client = AnthropicBedrock(
+                aws_access_key=bearer_token,
+                aws_secret_key="",  # Empty secret for token-based auth
+                aws_region="us-east-1",  # Default region
+            )
+        else:
+            # Use default AWS credential chain (environment variables, ~/.aws/credentials, IAM roles)
+            self.client = AnthropicBedrock(
+                aws_region="us-east-1",
+            )
 
     def invoke(
         self,
