@@ -225,15 +225,22 @@ class LLMInvoker:
         execution_results = []
 
         for order_decision in orders:
-            # For close actions, get side and quantity from the existing position if not provided
+            # For close actions, get side, quantity, and symbol from the existing position if not provided
             side = order_decision.side
             quantity = order_decision.quantity
             position_id = UUID(order_decision.position_id) if order_decision.position_id else None
 
+            # Determine symbol - for close actions, ALWAYS use the position's actual symbol
+            # to prevent LLM confusion from causing wrong price fetching
+            symbol = order_decision.symbol  # Default: use LLM's symbol
+            position = None
+
             if order_decision.action == "close" and position_id:
-                # Get the position to extract side and quantity if needed
+                # Get the position to extract side, quantity, and SYMBOL
                 position = self.db.query(Position).filter(Position.id == position_id).first()
                 if position:
+                    # CRITICAL FIX: Use position's actual symbol, not LLM's claim
+                    symbol = position.symbol
                     if side is None:
                         # For closing, the side is opposite of the position side
                         side = "sell" if position.side == "long" else "buy"
@@ -246,7 +253,7 @@ class LLMInvoker:
                 order = Order(
                     participant_id=participant.id,
                     competition_id=competition.id,
-                    symbol=order_decision.symbol,
+                    symbol=symbol,  # Use corrected symbol
                     asset_class="crypto",
                     order_type="market",
                     side=side or "buy",
@@ -263,7 +270,7 @@ class LLMInvoker:
                 execution_results.append({
                     "order_id": str(order.id),
                     "action": order_decision.action,
-                    "symbol": order_decision.symbol,
+                    "symbol": symbol,  # Use corrected symbol
                     "side": side,
                     "quantity": float(quantity) if quantity else None,
                     "leverage": float(order_decision.leverage),
@@ -277,7 +284,7 @@ class LLMInvoker:
                 participant=participant,
                 competition=competition,
                 portfolio=portfolio,
-                symbol=order_decision.symbol,
+                symbol=symbol,  # Use corrected symbol
                 side=side,
                 quantity=Decimal(str(quantity)),
                 leverage=Decimal(str(order_decision.leverage)),
@@ -289,7 +296,7 @@ class LLMInvoker:
             order = Order(
                 participant_id=participant.id,
                 competition_id=competition.id,
-                symbol=order_decision.symbol,
+                symbol=symbol,  # Use corrected symbol
                 asset_class="crypto",  # TODO: determine from symbol
                 order_type="market",
                 side=side,
@@ -320,7 +327,7 @@ class LLMInvoker:
             execution_results.append({
                 "order_id": str(order.id),
                 "action": order_decision.action,
-                "symbol": order_decision.symbol,
+                "symbol": symbol,  # Use corrected symbol
                 "side": side,
                 "quantity": float(quantity),
                 "leverage": float(order_decision.leverage),

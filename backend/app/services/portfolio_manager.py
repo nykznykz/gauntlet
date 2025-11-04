@@ -123,11 +123,12 @@ class PortfolioManager:
         # Model 1: Reserve margin - cash stays in account, margin is reserved
         # Cash balance remains unchanged
         # NOTE: Don't manually adjust margin_used here - update_portfolio will
-        # recalculate it from all positions
+        # recalculate it from all positions after the position is created
         # margin_available will be recalculated in update_portfolio as (equity - margin_used)
 
-        # No need to commit here, just let update_portfolio handle it
-        return self.update_portfolio(portfolio)
+        # Don't call update_portfolio here to avoid recording intermediate state
+        # The caller will call update_portfolio after the position is created
+        return portfolio
 
     def release_margin(
         self,
@@ -146,7 +147,9 @@ class PortfolioManager:
         self.db.add(portfolio)
         # Don't commit here - let caller handle transaction atomicity
 
-        return self.update_portfolio(portfolio)
+        # Don't call update_portfolio here to avoid recording intermediate state
+        # The caller will call update_portfolio after the position is closed
+        return portfolio
 
     def update_participant_equity(
         self,
