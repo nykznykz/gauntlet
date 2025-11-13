@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from decimal import Decimal
 from datetime import datetime
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 
 class PortfolioHistoryPoint(BaseModel):
@@ -20,11 +20,19 @@ class PortfolioHistoryPoint(BaseModel):
         from_attributes = True
 
 
+class DownsamplingMetadata(BaseModel):
+    """Metadata about downsampling applied to history data"""
+    original_count: int
+    downsampled_count: int
+    interval_minutes: int
+
+
 class PortfolioHistoryResponse(BaseModel):
     """Portfolio history response"""
     participant_id: UUID
     participant_name: str
     history: List[PortfolioHistoryPoint]
+    metadata: Optional[DownsamplingMetadata] = None
 
 
 class MultiParticipantHistoryResponse(BaseModel):

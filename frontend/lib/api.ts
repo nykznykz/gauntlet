@@ -73,7 +73,8 @@ export const competitionApi = {
   list: () => apiClient.get<{ competitions: Competition[] }>('/api/v1/competitions'),
   get: (id: string) => apiClient.get<Competition>(`/api/v1/competitions/${id}`),
   create: (data: any) => apiClient.post<Competition>('/api/v1/competitions', data),
-  history: (id: string) => apiClient.get<MultiParticipantHistory>(`/api/v1/competitions/${id}/history`),
+  history: (id: string, targetPoints: number = 800) =>
+    apiClient.get<MultiParticipantHistory>(`/api/v1/competitions/${id}/history?target_points=${targetPoints}`),
 };
 
 // Participant APIs
