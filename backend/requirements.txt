@@ -31,7 +31,7 @@ numpy==2.2.6
 
 # Technical Indicators
 # ta-lib==0.4.28  # Requires system-level TA-Lib library, install separately if needed
-pandas-ta==0.3.14b0  # Compatible with Python 3.8+
+pandas-ta==0.4.67b0  # Requires Python 3.12+
 
 # Scheduler
 apscheduler==3.11.0
