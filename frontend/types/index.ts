@@ -99,10 +99,17 @@ export interface PortfolioHistoryPoint {
   total_pnl: number;
 }
 
+export interface DownsamplingMetadata {
+  original_count: number;
+  downsampled_count: number;
+  interval_minutes: number;
+}
+
 export interface PortfolioHistory {
   participant_id: string;
   participant_name: string;
   history: PortfolioHistoryPoint[];
+  metadata?: DownsamplingMetadata;
 }
 
 export interface MultiParticipantHistory {

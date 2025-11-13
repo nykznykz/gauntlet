@@ -9,7 +9,8 @@ from app.models.competition import Competition
 from app.models.participant import Participant
 from app.models.portfolio_history import PortfolioHistory
 from app.schemas.competition import CompetitionCreate, CompetitionResponse, CompetitionList
-from app.schemas.portfolio_history import MultiParticipantHistoryResponse
+from app.schemas.portfolio_history import MultiParticipantHistoryResponse, DownsamplingMetadata
+from app.utils.downsampling import adaptive_downsample
 
 router = APIRouter(prefix="/competitions", tags=["competitions"])
 
@@ -118,16 +119,20 @@ def stop_competition(
 @router.get("/{competition_id}/history", response_model=MultiParticipantHistoryResponse)
 def get_competition_history(
     competition_id: UUID,
-    limit_per_participant: Optional[int] = None,
+    target_points: int = 800,
     db: Session = Depends(get_db)
 ):
-    """Get portfolio history for all participants in a competition (for multi-trader equity chart)
+    """Get portfolio history for all participants with adaptive downsampling.
+
+    This endpoint intelligently downsamples history data based on volume:
+    - For competitions with <= 1000 records per participant: returns all raw data
+    - For larger datasets: automatically downsamples to ~target_points using optimal intervals
 
     Args:
         competition_id: UUID of the competition
-        limit_per_participant: Optional limit on number of records per participant.
-                              If provided, returns the most recent N records.
-                              If not provided, returns all history.
+        target_points: Target number of data points per participant (default 800).
+                      Higher values = more detail but larger payload.
+                      Set to 0 to disable downsampling and get all raw data.
     """
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
 
@@ -141,32 +146,37 @@ def get_competition_history(
         .all()
     )
 
-    # Get history for each participant
+    # Get history for each participant with adaptive downsampling
     participants_history = []
     for participant in participants:
-        query = (
+        # Fetch all history in chronological order
+        history = (
             db.query(PortfolioHistory)
             .filter(PortfolioHistory.participant_id == participant.id)
+            .order_by(PortfolioHistory.recorded_at.asc())
+            .all()
         )
 
-        if limit_per_participant:
-            # If limit is specified, get most recent N records by ordering DESC, limiting, then reversing
-            history = (
-                query
-                .order_by(PortfolioHistory.recorded_at.desc())
-                .limit(limit_per_participant)
-                .all()
-            )
-            # Reverse to get chronological order (oldest to newest)
-            history.reverse()
+        original_count = len(history)
+
+        # Apply adaptive downsampling if target_points is set
+        if target_points > 0:
+            history, interval_used = adaptive_downsample(history, target_points)
         else:
-            # No limit - fetch all records in chronological order
-            history = query.order_by(PortfolioHistory.recorded_at.asc()).all()
+            # No downsampling requested
+            interval_used = 0
+
+        downsampled_count = len(history)
 
         participants_history.append({
             "participant_id": participant.id,
             "participant_name": participant.name,
-            "history": history
+            "history": history,
+            "metadata": DownsamplingMetadata(
+                original_count=original_count,
+                downsampled_count=downsampled_count,
+                interval_minutes=interval_used
+            )
         })
 
     return {"participants": participants_history}
